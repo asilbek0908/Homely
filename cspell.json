@@ -1,0 +1,19 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "Chilonzor",
+    "Yunusabad",
+    "Shaykhontohur",
+    "Uchtepa",
+    "Bektemir",
+    "Sergeli",
+    "Yashnobod",
+    "Tashkent",
+    "ustalar",
+    "jobRate",
+    "telegramChatId",
+    "Homely"
+  ],
+  "ignorePaths": ["node_modules", "dist", ".git"]
+}
