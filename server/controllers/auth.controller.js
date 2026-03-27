@@ -164,7 +164,9 @@ const resendVerification = async (req, res) => {
     user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await user.save();
 
-    await sendVerificationEmail(user.email, verificationToken);
+    sendVerificationEmail(user.email, verificationToken).catch((err) =>
+      console.error('Verification email failed:', err.message)
+    );
     res.json({ success: true, message: 'Verification email sent' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -184,7 +186,10 @@ const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await user.save();
 
-    await sendPasswordResetEmail(email, resetToken);
+    // Non-blocking — won't crash if SMTP is not configured
+    sendPasswordResetEmail(email, resetToken).catch((err) =>
+      console.error('Password reset email failed:', err.message)
+    );
     res.json({ success: true, message: 'Password reset email sent' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
