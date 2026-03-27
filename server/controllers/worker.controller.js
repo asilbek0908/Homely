@@ -147,4 +147,50 @@ const uploadPortfolio = async (req, res) => {
   }
 };
 
-module.exports = { getAllWorkers, getWorkerById, createWorkerProfile, updateWorkerProfile, getWorkerStats, uploadIdDocument, uploadPortfolio };
+// @desc    Get current worker's own profile
+// @route   GET /api/workers/profile/me
+const getMyProfile = async (req, res) => {
+  try {
+    const worker = await Worker.findOne({ user: req.user._id });
+    if (!worker) return res.status(404).json({ success: false, message: 'Worker profile not found' });
+    res.json({ success: true, worker });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// @desc    Delete ID document
+// @route   DELETE /api/workers/document
+const deleteIdDocument = async (req, res) => {
+  try {
+    const worker = await Worker.findOneAndUpdate(
+      { user: req.user._id },
+      { idDocument: '' },
+      { new: true }
+    );
+    if (!worker) return res.status(404).json({ success: false, message: 'Worker profile not found' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// @desc    Delete one portfolio photo
+// @route   DELETE /api/workers/portfolio
+const deletePortfolioPhoto = async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ success: false, message: 'URL required' });
+    const worker = await Worker.findOneAndUpdate(
+      { user: req.user._id },
+      { $pull: { portfolio: url } },
+      { new: true }
+    );
+    if (!worker) return res.status(404).json({ success: false, message: 'Worker profile not found' });
+    res.json({ success: true, portfolio: worker.portfolio });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = { getAllWorkers, getWorkerById, createWorkerProfile, updateWorkerProfile, getWorkerStats, uploadIdDocument, uploadPortfolio, getMyProfile, deleteIdDocument, deletePortfolioPhoto };

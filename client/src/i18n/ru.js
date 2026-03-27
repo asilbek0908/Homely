@@ -21,6 +21,7 @@ export default {
     selectDistrict: 'Выберите район',
     selectService: 'Выберите услугу',
     allDistricts: 'Все районы',
+    delete: 'Удалить',
   },
 
   notFound: {

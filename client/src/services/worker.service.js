@@ -25,3 +25,8 @@ export const getWorkerStats = async () => {
   const res = await api.get('/workers/stats/me');
   return res.data;
 };
+
+export const getMyWorkerProfile = async () => {
+  const res = await api.get('/workers/profile/me');
+  return res.data;
+};

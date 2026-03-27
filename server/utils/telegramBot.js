@@ -117,7 +117,7 @@ sifatli xizmat oling!
 \`${chatId}\`
 
 📋 *Bu ID nima uchun kerak?*
-homely.uz saytiga kiring →
+http://localhost:5173 ga kiring →
 Sozlamalar → Telegram →
 Ushbu ID ni joylashtiring.
 
@@ -153,7 +153,7 @@ Homely — первый надёжный
 \`${chatId}\`
 
 📋 *Зачем нужен этот ID?*
-Войдите на homely.uz →
+Войдите на http://localhost:5173 →
 Настройки → Telegram →
 Вставьте этот ID.
 
@@ -186,7 +186,7 @@ service workers.
 \`${chatId}\`
 
 📋 *Why do you need this ID?*
-Login to homely.uz →
+Login to http://localhost:5173 →
 Settings → Telegram →
 Paste this ID.
 
@@ -216,7 +216,7 @@ Homely orqali xizmat olish
 juda oson!
 
 *Qanday ishlaydi:*
-1️⃣ homely.uz da ro'yxatdan o'ting
+1️⃣ http://localhost:5173/register da ro'yxatdan o'ting
 2️⃣ Kerakli xizmatni tanlang
 3️⃣ Tekshirilgan ustani tanlang
 4️⃣ Buyurtma bering
@@ -238,7 +238,7 @@ shu yerda darhol xabar olasiz!
 очень просто!
 
 *Как это работает:*
-1️⃣ Зарегистрируйтесь на homely.uz
+1️⃣ Зарегистрируйтесь на http://localhost:5173/register
 2️⃣ Выберите нужную услугу
 3️⃣ Выберите проверенного мастера
 4️⃣ Оформите заказ
@@ -260,7 +260,7 @@ Getting a service through Homely
 is quick and easy!
 
 *How it works:*
-1️⃣ Register on homely.uz
+1️⃣ Register on http://localhost:5173/register
 2️⃣ Choose the service you need
 3️⃣ Select a verified worker
 4️⃣ Make your booking
@@ -286,7 +286,7 @@ Homely orqali ko'proq
 mijoz toping!
 
 *Qanday ishlaydi:*
-1️⃣ homely.uz da usta sifatida
+1️⃣ http://localhost:5173/register da usta sifatida
    ro'yxatdan o'ting
 2️⃣ Profilingizni to'ldiring
 3️⃣ Hujjatlarni yuklang
@@ -315,7 +315,7 @@ yubormang! 🔔
 через Homely!
 
 *Как это работает:*
-1️⃣ Зарегистрируйтесь на homely.uz
+1️⃣ Зарегистрируйтесь на http://localhost:5173/register
    как мастер
 2️⃣ Заполните профиль полностью
 3️⃣ Загрузите документы
@@ -344,7 +344,7 @@ Find more customers through
 Homely!
 
 *How it works:*
-1️⃣ Register on homely.uz
+1️⃣ Register on http://localhost:5173/register
    as a service worker
 2️⃣ Complete your profile fully
 3️⃣ Upload your documents
@@ -377,9 +377,9 @@ const mainMenuPrompt = {
 // ─── Chat ID help message ──────────────────────────────────────────────────────
 
 const chatIdHelpMsg = {
-  uz: (chatId) => `🔑 *Sizning Chat ID'ingiz:*\n\`${chatId}\`\n\nhomely.uz → Sozlamalar → Telegram → ID ni joylashtiring.`,
-  ru: (chatId) => `🔑 *Ваш Chat ID:*\n\`${chatId}\`\n\nhomely.uz → Настройки → Telegram → Вставьте ID.`,
-  en: (chatId) => `🔑 *Your Chat ID:*\n\`${chatId}\`\n\nhomely.uz → Settings → Telegram → Paste this ID.`,
+  uz: (chatId) => `🔑 *Sizning Chat ID'ingiz:*\n\`${chatId}\`\n\nhttp://localhost:5173/telegram-connect → ID ni joylashtiring.`,
+  ru: (chatId) => `🔑 *Ваш Chat ID:*\n\`${chatId}\`\n\nhttp://localhost:5173/telegram-connect → Вставьте ID.`,
+  en: (chatId) => `🔑 *Your Chat ID:*\n\`${chatId}\`\n\nhttp://localhost:5173/telegram-connect → Paste this ID.`,
 };
 
 // ─── About message ─────────────────────────────────────────────────────────────
@@ -395,7 +395,7 @@ xizmatlari uchun №1 platforma.
 Toshkentdagi uy egalari va
 ishonchli ustalarni bog'laymiz.
 
-🌐 homely.uz
+🌐 http://localhost:5173
 📧 info@homely.uz
 📞 +998 91 977 9202
 ━━━━━━━━━━━━━━━━━━━━━━━`,
@@ -410,7 +410,7 @@ Homely — платформа №1 для
 Связываем владельцев жилья
 с надёжными мастерами Ташкента.
 
-🌐 homely.uz
+🌐 http://localhost:5173
 📧 info@homely.uz
 📞 +998 91 977 9202
 ━━━━━━━━━━━━━━━━━━━━━━━`,
@@ -425,7 +425,7 @@ for home services.
 We connect Tashkent homeowners
 with trusted local workers.
 
-🌐 homely.uz
+🌐 http://localhost:5173
 📧 info@homely.uz
 📞 +998 91 977 9202
 ━━━━━━━━━━━━━━━━━━━━━━━`,
@@ -555,7 +555,7 @@ if (token) {
       }
 
       if (data === 'website') {
-        await safeSend(chatId, '🌐 homely.uz');
+        await safeSend(chatId, '🌐 http://localhost:5173');
         return;
       }
     });

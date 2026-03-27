@@ -21,6 +21,7 @@ export default {
     selectDistrict: 'Tumanni tanlang',
     selectService: 'Xizmatni tanlang',
     allDistricts: 'Barcha tumanlar',
+    delete: "O'chirish",
   },
 
   notFound: {

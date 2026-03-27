@@ -28,3 +28,13 @@ export const uploadPortfolio = async (files) => {
   });
   return res.data;
 };
+
+export const deleteIdDocument = async () => {
+  const res = await api.delete('/workers/document');
+  return res.data;
+};
+
+export const deletePortfolioPhoto = async (url) => {
+  const res = await api.delete('/workers/portfolio', { data: { url } });
+  return res.data;
+};

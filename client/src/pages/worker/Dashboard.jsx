@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { getWorkerBookings } from '../../services/booking.service';
-import { getWorkerStats } from '../../services/worker.service';
-import { uploadAvatar, uploadIdDocument, uploadPortfolio } from '../../services/upload.service';
+import { getWorkerStats, getMyWorkerProfile } from '../../services/worker.service';
+import { uploadAvatar, uploadIdDocument, uploadPortfolio, deleteIdDocument, deletePortfolioPhoto } from '../../services/upload.service';
 import BookingCard from '../../components/BookingCard';
 
 const formatUZS = (n) => new Intl.NumberFormat('uz-UZ').format(n) + ' UZS';
@@ -20,19 +20,25 @@ const WorkerDashboard = () => {
   const [docUploading, setDocUploading] = useState(false);
   const [portfolioUploading, setPortfolioUploading] = useState(false);
   const [docSuccess, setDocSuccess] = useState('');
+  const [currentDoc, setCurrentDoc] = useState('');
   const [portfolioImages, setPortfolioImages] = useState([]);
+  const [docDeleting, setDocDeleting] = useState(false);
+  const [deletingPhoto, setDeletingPhoto] = useState(null);
   const avatarInputRef = useRef(null);
   const docInputRef = useRef(null);
   const portfolioInputRef = useRef(null);
 
   const fetchData = async () => {
     try {
-      const [bookData, statsData] = await Promise.all([
+      const [bookData, statsData, profileData] = await Promise.all([
         getWorkerBookings(),
         getWorkerStats().catch(() => ({ stats: {} })),
+        getMyWorkerProfile().catch(() => ({ worker: {} })),
       ]);
       setBookings(bookData.bookings || []);
       setStats(statsData.stats || {});
+      setCurrentDoc(profileData.worker?.idDocument || '');
+      setPortfolioImages(profileData.worker?.portfolio || []);
     } catch (err) { console.error('Worker fetch error:', err); } finally { setLoading(false); }
   };
 
@@ -42,12 +48,27 @@ const WorkerDashboard = () => {
     setDocUploading(true);
     setDocSuccess('');
     try {
-      await uploadIdDocument(file);
+      const data = await uploadIdDocument(file);
+      setCurrentDoc(data.idDocument);
       setDocSuccess(t('upload.docUploaded'));
     } catch (err) {
       console.error('Document upload failed:', err);
     } finally {
       setDocUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDocDelete = async () => {
+    setDocDeleting(true);
+    try {
+      await deleteIdDocument();
+      setCurrentDoc('');
+      setDocSuccess('');
+    } catch (err) {
+      console.error('Document delete failed:', err);
+    } finally {
+      setDocDeleting(false);
     }
   };
 
@@ -62,6 +83,19 @@ const WorkerDashboard = () => {
       console.error('Portfolio upload failed:', err);
     } finally {
       setPortfolioUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handlePhotoDelete = async (url) => {
+    setDeletingPhoto(url);
+    try {
+      const data = await deletePortfolioPhoto(url);
+      setPortfolioImages(data.portfolio || []);
+    } catch (err) {
+      console.error('Photo delete failed:', err);
+    } finally {
+      setDeletingPhoto(null);
     }
   };
 
@@ -170,20 +204,44 @@ const WorkerDashboard = () => {
             <div className="bg-white rounded-xl shadow-md p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-2">{t('upload.uploadIdDoc')}</h2>
               <p className="text-gray-500 text-sm mb-4">{t('upload.idDocHint')}</p>
-              <button onClick={() => docInputRef.current?.click()} disabled={docUploading}
-                className="w-full border-2 border-dashed border-gray-300 hover:border-[#1A56DB] rounded-xl p-8 text-center transition-colors">
-                {docUploading ? (
-                  <div className="flex items-center justify-center gap-2 text-[#1A56DB]">
-                    <div className="w-5 h-5 border-2 border-[#1A56DB] border-t-transparent rounded-full animate-spin" />
-                    {t('upload.uploading')}
+
+              {currentDoc ? (
+                <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                  <a href={`http://localhost:5000${currentDoc}`} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-[#1A56DB] text-sm hover:underline">
+                    <span className="text-xl">📄</span>
+                    <span>{t('adminDash.viewDoc')}</span>
+                  </a>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => docInputRef.current?.click()} disabled={docUploading}
+                      className="text-xs text-gray-500 hover:text-[#1A56DB] px-3 py-1.5 border border-gray-300 rounded-lg hover:border-[#1A56DB] transition-colors">
+                      {t('upload.changeAvatar')}
+                    </button>
+                    <button onClick={handleDocDelete} disabled={docDeleting}
+                      className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-1 disabled:opacity-50">
+                      {docDeleting
+                        ? <div className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                        : '🗑️'}
+                      {t('common.delete') || 'Delete'}
+                    </button>
                   </div>
-                ) : (
-                  <div>
-                    <div className="text-3xl mb-2">📎</div>
-                    <p className="text-gray-500 text-sm">{t('upload.dragOrClick')}</p>
-                  </div>
-                )}
-              </button>
+                </div>
+              ) : (
+                <button onClick={() => docInputRef.current?.click()} disabled={docUploading}
+                  className="w-full border-2 border-dashed border-gray-300 hover:border-[#1A56DB] rounded-xl p-8 text-center transition-colors">
+                  {docUploading ? (
+                    <div className="flex items-center justify-center gap-2 text-[#1A56DB]">
+                      <div className="w-5 h-5 border-2 border-[#1A56DB] border-t-transparent rounded-full animate-spin" />
+                      {t('upload.uploading')}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="text-3xl mb-2">📎</div>
+                      <p className="text-gray-500 text-sm">{t('upload.dragOrClick')}</p>
+                    </div>
+                  )}
+                </button>
+              )}
               <input ref={docInputRef} type="file" accept="image/*,.pdf" onChange={handleDocUpload} className="hidden" />
               {docSuccess && <p className="text-green-600 text-sm mt-3 flex items-center gap-1">✅ {docSuccess}</p>}
             </div>
@@ -212,7 +270,17 @@ const WorkerDashboard = () => {
                   <p className="text-sm text-gray-600 mb-2">{t('upload.photosUploaded', { count: portfolioImages.length })}</p>
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                     {portfolioImages.map((url, i) => (
-                      <img key={i} src={`http://localhost:5000${url}`} alt="" className="w-full h-20 object-cover rounded-lg" />
+                      <div key={i} className="relative group">
+                        <img src={`http://localhost:5000${url}`} alt="" className="w-full h-20 object-cover rounded-lg" />
+                        <button
+                          onClick={() => handlePhotoDelete(url)}
+                          disabled={deletingPhoto === url}
+                          className="absolute inset-0 bg-black/0 group-hover:bg-black/40 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                          {deletingPhoto === url
+                            ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            : <span className="text-white text-lg">🗑️</span>}
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </div>

@@ -22,6 +22,7 @@ export default {
     selectDistrict: 'Select district',
     selectService: 'Select a service',
     allDistricts: 'All districts',
+    delete: 'Delete',
   },
 
   notFound: {
