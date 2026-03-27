@@ -9,8 +9,6 @@ const userLanguages = new Map();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const delay = (ms) => new Promise((res) => setTimeout(res, ms));
-
 const safeSend = async (chatId, text, opts = {}) => {
   if (!bot || !chatId) return;
   try {
@@ -20,458 +18,155 @@ const safeSend = async (chatId, text, opts = {}) => {
   }
 };
 
-// ─── Language selection keyboard ──────────────────────────────────────────────
+const t = (lang, uz, ru, en) => (lang === 'uz' ? uz : lang === 'ru' ? ru : en);
+
+// ─── Keyboards ────────────────────────────────────────────────────────────────
 
 const langKeyboard = {
   inline_keyboard: [
-    [{ text: "🇺🇿 O'zbek",   callback_data: 'lang_uz' }],
-    [{ text: '🇷🇺 Русский',   callback_data: 'lang_ru' }],
-    [{ text: '🇬🇧 English',   callback_data: 'lang_en' }],
+    [
+      { text: "🇺🇿 O'zbek", callback_data: 'lang_uz' },
+      { text: '🇷🇺 Русский', callback_data: 'lang_ru' },
+      { text: '🇬🇧 English', callback_data: 'lang_en' },
+    ],
   ],
 };
 
-// ─── Role keyboards (per language) ────────────────────────────────────────────
+// Persistent bottom keyboard (always visible)
+const replyKeyboard = (lang) => ({
+  keyboard: [
+    [
+      { text: t(lang, '🏡 Mijozman', '🏡 Я клиент', '🏡 I need help') },
+      { text: t(lang, '👷 Ustaman', '👷 Я мастер', '👷 I am a worker') },
+    ],
+    [
+      { text: t(lang, '🔑 Chat ID', '🔑 Chat ID', '🔑 Chat ID') },
+      { text: t(lang, '❓ Yordam', '❓ Помощь', '❓ Help') },
+    ],
+  ],
+  resize_keyboard: true,
+  persistent: true,
+});
 
-const roleKeyboard = {
-  uz: {
-    inline_keyboard: [
-      [{ text: '🏡 Menga xizmat kerak', callback_data: 'need_service' }],
-      [{ text: '👷 Men ustaman',         callback_data: 'am_worker'    }],
-      [
-        { text: 'ℹ️ Homely haqida', callback_data: 'about' },
-        { text: '❓ Yordam',         callback_data: 'help'  },
-      ],
+// Inline keyboard for cards/detail screens
+const mainKeyboard = (lang) => ({
+  inline_keyboard: [
+    [
+      { text: t(lang, '🏡 Mijozman', '🏡 Я клиент', '🏡 I need help'), callback_data: 'need_service' },
+      { text: t(lang, '👷 Ustaman', '👷 Я мастер', '👷 I am a worker'), callback_data: 'am_worker' },
     ],
-  },
-  ru: {
-    inline_keyboard: [
-      [{ text: '🏡 Мне нужна услуга', callback_data: 'need_service' }],
-      [{ text: '👷 Я мастер',          callback_data: 'am_worker'    }],
-      [
-        { text: 'ℹ️ О Homely', callback_data: 'about' },
-        { text: '❓ Помощь',   callback_data: 'help'  },
-      ],
+    [
+      { text: t(lang, '🔑 Chat ID', '🔑 Chat ID', '🔑 Chat ID'), callback_data: 'chatid_help' },
+      { text: t(lang, '❓ Yordam', '❓ Помощь', '❓ Help'), callback_data: 'help' },
     ],
-  },
-  en: {
-    inline_keyboard: [
-      [{ text: '🏡 I need services', callback_data: 'need_service' }],
-      [{ text: '👷 I am a worker',   callback_data: 'am_worker'    }],
-      [
-        { text: 'ℹ️ About Homely', callback_data: 'about' },
-        { text: '❓ Help',          callback_data: 'help'  },
-      ],
-    ],
-  },
-};
-
-// ─── Back-to-menu keyboard ─────────────────────────────────────────────────────
+  ],
+});
 
 const backKeyboard = (lang) => ({
   inline_keyboard: [
-    [{ text: lang === 'uz' ? '🌐 Usta topish' : lang === 'ru' ? '🌐 Найти мастера' : '🌐 Find a Worker',
-       callback_data: 'website' }],
-    [{ text: lang === 'uz' ? '🔑 Chat ID ni ulash' : lang === 'ru' ? '🔑 Подключить Chat ID' : '🔑 Connect Chat ID',
-       callback_data: 'chatid_help' }],
-    [{ text: lang === 'uz' ? '🏠 Bosh menyu' : lang === 'ru' ? '🏠 Главное меню' : '🏠 Main Menu',
-       callback_data: 'main_menu' }],
+    [{ text: t(lang, '🏠 Orqaga', '🏠 Назад', '🏠 Back'), callback_data: 'main_menu' }],
   ],
 });
 
-const workerBackKeyboard = (lang) => ({
-  inline_keyboard: [
-    [{ text: lang === 'uz' ? '🌐 Usta bo\'lish' : lang === 'ru' ? '🌐 Стать мастером' : '🌐 Register as Worker',
-       callback_data: 'website' }],
-    [{ text: lang === 'uz' ? '🔑 Chat ID ni ulash' : lang === 'ru' ? '🔑 Подключить Chat ID' : '🔑 Connect Chat ID',
-       callback_data: 'chatid_help' }],
-    [{ text: lang === 'uz' ? '🏠 Bosh menyu' : lang === 'ru' ? '🏠 Главное меню' : '🏠 Main Menu',
-       callback_data: 'main_menu' }],
-  ],
-});
+// ─── Messages ─────────────────────────────────────────────────────────────────
 
-// ─── Welcome messages ──────────────────────────────────────────────────────────
+const welcomeMsg = (lang, firstName, chatId) => {
+  const lines = {
+    uz: `👋 Salom, *${firstName}*! Homely botiga xush kelibsiz.
 
-const welcomeMsg = {
-  uz: (firstName, chatId) =>
-`🏠 *HOMELY'GA XO'SH KELIBSIZ!*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Assalomu alaykum, *${firstName}*! 👋
-
-Homely — O'zbekistondagi birinchi
-ishonchli uy xizmatlari platformasi.
-
-Tekshirilgan ustalar bilan
-bog'laning, xavfsiz to'lang va
-sifatli xizmat oling!
-
-*Nima uchun Homely?*
-✅ Barcha ustalar tekshirilgan
-💰 Shaffof narxlar
-⭐ Haqiqiy mijoz sharhlari
-🔒 Xavfsiz buyurtma tizimi
-🔔 Darhol Telegram bildirishnomalar
-
-━━━━━━━━━━━━━━━━━━━━━━━
 🔑 *Sizning Chat ID'ingiz:*
 \`${chatId}\`
 
-📋 *Bu ID nima uchun kerak?*
-http://localhost:5173 ga kiring →
-Sozlamalar → Telegram →
-Ushbu ID ni joylashtiring.
+Bu ID'ni Homely saytidagi *Sozlamalar → Telegram* bo'limiga joylashtiring — shundan so'ng buyurtmalar haqida darhol xabar olasiz. 🔔`,
 
-Shundan so'ng barcha buyurtmalar
-va yangiliklar haqida darhol
-xabar olasiz! 🔔
-━━━━━━━━━━━━━━━━━━━━━━━
-_Uyingiz ishonchli qo'llarda._ 🏠`,
+    ru: `👋 Привет, *${firstName}*! Добро пожаловать в бот Homely.
 
-  ru: (firstName, chatId) =>
-`🏠 *ДОБРО ПОЖАЛОВАТЬ В HOMELY!*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Здравствуйте, *${firstName}*! 👋
-
-Homely — первый надёжный
-маркетплейс домашних услуг
-в Узбекистане.
-
-Находите проверенных мастеров,
-платите безопасно и получайте
-качественный сервис!
-
-*Почему Homely?*
-✅ Все мастера проверены
-💰 Прозрачные цены
-⭐ Настоящие отзывы клиентов
-🔒 Безопасная система заказов
-🔔 Мгновенные Telegram уведомления
-
-━━━━━━━━━━━━━━━━━━━━━━━
 🔑 *Ваш Chat ID:*
 \`${chatId}\`
 
-📋 *Зачем нужен этот ID?*
-Войдите на http://localhost:5173 →
-Настройки → Telegram →
-Вставьте этот ID.
+Вставьте этот ID в *Настройки → Telegram* на сайте Homely — и получайте мгновенные уведомления о заказах. 🔔`,
 
-После этого вы будете получать
-мгновенные уведомления о всех
-заказах и обновлениях! 🔔
-━━━━━━━━━━━━━━━━━━━━━━━
-_Ваш дом в надёжных руках._ 🏠`,
+    en: `👋 Hello, *${firstName}*! Welcome to the Homely bot.
 
-  en: (firstName, chatId) =>
-`🏠 *WELCOME TO HOMELY!*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Hello, *${firstName}*! 👋
-
-Homely is Uzbekistan's first trusted
-home services marketplace connecting
-homeowners with verified local
-service workers.
-
-*Why Homely?*
-✅ All workers are verified
-💰 Transparent pricing
-⭐ Real customer reviews
-🔒 Secure booking system
-🔔 Instant Telegram notifications
-
-━━━━━━━━━━━━━━━━━━━━━━━
 🔑 *Your Chat ID:*
 \`${chatId}\`
 
-📋 *Why do you need this ID?*
-Login to http://localhost:5173 →
-Settings → Telegram →
-Paste this ID.
-
-After connecting you will receive
-instant notifications about all
-bookings and updates! 🔔
-━━━━━━━━━━━━━━━━━━━━━━━
-_Your Home, In Safe Hands._ 🏠`,
+Paste this ID in *Settings → Telegram* on the Homely site to receive instant booking notifications. 🔔`,
+  };
+  return lines[lang];
 };
 
-// ─── Role prompt messages ──────────────────────────────────────────────────────
+const customerMsg = (lang) => {
+  const lines = {
+    uz: `🏡 *Uy egasi uchun*
 
-const rolePrompt = {
-  uz: '👇 *Siz kim sifatida foydalanasiz?*\n━━━━━━━━━━━━━━━━━━━━━━━',
-  ru: '👇 *Кто вы на платформе?*\n━━━━━━━━━━━━━━━━━━━━━━━',
-  en: '👇 *Who are you on the platform?*\n━━━━━━━━━━━━━━━━━━━━━━━',
+1️⃣ Saytga kiring: http://localhost:5173/register
+2️⃣ Xizmatni tanlang va usta buyurtma qiling
+3️⃣ Ish tugagandan so'ng to'lang
+
+🔧 Santexnika · ⚡ Elektrik · ❄️ Konditsioner`,
+
+    ru: `🏡 *Для клиентов*
+
+1️⃣ Зарегистрируйтесь: http://localhost:5173/register
+2️⃣ Выберите услугу и закажите мастера
+3️⃣ Оплатите после выполнения работы
+
+🔧 Сантехника · ⚡ Электрика · ❄️ Кондиционер`,
+
+    en: `🏡 *For Homeowners*
+
+1️⃣ Register at: http://localhost:5173/register
+2️⃣ Choose a service and book a worker
+3️⃣ Pay only after the job is done
+
+🔧 Plumbing · ⚡ Electrical · ❄️ AC Repair`,
+  };
+  return lines[lang];
 };
 
-// ─── Customer info messages ────────────────────────────────────────────────────
+const workerMsg = (lang) => {
+  const lines = {
+    uz: `👷 *Usta uchun*
 
-const customerMsg = {
-  uz:
-`🏡 *UY EGASI UCHUN*
-━━━━━━━━━━━━━━━━━━━━━━━
+1️⃣ Ro'yxatdan o'ting: http://localhost:5173/register
+2️⃣ Profilingizni to'ldiring va hujjat yuklang
+3️⃣ Admin tasdiqlashini kuting
+4️⃣ Buyurtmalarni qabul qiling va pul ishlang 💰`,
 
-Homely orqali xizmat olish
-juda oson!
+    ru: `👷 *Для мастеров*
 
-*Qanday ishlaydi:*
-1️⃣ http://localhost:5173/register da ro'yxatdan o'ting
-2️⃣ Kerakli xizmatni tanlang
-3️⃣ Tekshirilgan ustani tanlang
-4️⃣ Buyurtma bering
-5️⃣ Ish bajarilgandan keyin to'lang
+1️⃣ Зарегистрируйтесь: http://localhost:5173/register
+2️⃣ Заполните профиль и загрузите документы
+3️⃣ Дождитесь одобрения администратора
+4️⃣ Принимайте заказы и зарабатывайте 💰`,
 
-*Mavjud xizmatlar:*
-🔧 Santexnika  ⚡ Elektrik  ❄️ Konditsioner
+    en: `👷 *For Workers*
 
-━━━━━━━━━━━━━━━━━━━━━━━
-🔔 Buyurtma tasdiqlanganda
-shu yerda darhol xabar olasiz!
-━━━━━━━━━━━━━━━━━━━━━━━`,
-
-  ru:
-`🏡 *ДЛЯ ВЛАДЕЛЬЦЕВ ДОМОВ*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Получить услугу через Homely
-очень просто!
-
-*Как это работает:*
-1️⃣ Зарегистрируйтесь на http://localhost:5173/register
-2️⃣ Выберите нужную услугу
-3️⃣ Выберите проверенного мастера
-4️⃣ Оформите заказ
-5️⃣ Оплатите после выполнения
-
-*Доступные услуги:*
-🔧 Сантехника  ⚡ Электрика  ❄️ Кондиционер
-
-━━━━━━━━━━━━━━━━━━━━━━━
-🔔 Вы получите уведомление
-когда ваш заказ подтверждён!
-━━━━━━━━━━━━━━━━━━━━━━━`,
-
-  en:
-`🏡 *FOR HOMEOWNERS*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Getting a service through Homely
-is quick and easy!
-
-*How it works:*
-1️⃣ Register on http://localhost:5173/register
-2️⃣ Choose the service you need
-3️⃣ Select a verified worker
-4️⃣ Make your booking
-5️⃣ Pay after job is done
-
-*Available services:*
-🔧 Plumbing    ⚡ Electrical  ❄️ AC Repair
-
-━━━━━━━━━━━━━━━━━━━━━━━
-🔔 You will get notified here
-when your booking is confirmed!
-━━━━━━━━━━━━━━━━━━━━━━━`,
+1️⃣ Register at: http://localhost:5173/register
+2️⃣ Fill in your profile and upload documents
+3️⃣ Wait for admin approval
+4️⃣ Accept job requests and earn money 💰`,
+  };
+  return lines[lang];
 };
 
-// ─── Worker info messages ──────────────────────────────────────────────────────
-
-const workerMsg = {
-  uz:
-`👷 *USTA UCHUN*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Homely orqali ko'proq
-mijoz toping!
-
-*Qanday ishlaydi:*
-1️⃣ http://localhost:5173/register da usta sifatida
-   ro'yxatdan o'ting
-2️⃣ Profilingizni to'ldiring
-3️⃣ Hujjatlarni yuklang
-4️⃣ Admin tasdiqlashini kuting
-5️⃣ Ish buyurtmalarini qabul qiling
-6️⃣ Pul ishlang 💰
-
-*Nima uchun Homely?*
-✅ Bepul ro'yxatdan o'tish
-📱 Darhol Telegram bildirishnomalar
-⭐ Reyting va sharh tizimi
-💰 Xavfsiz to'lovlar
-🏆 Keng mijozlar bazasi
-
-━━━━━━━━━━━━━━━━━━━━━━━
-💡 Chat ID ni ulab, birorta
-ish so'rovini o'tkazib
-yubormang! 🔔
-━━━━━━━━━━━━━━━━━━━━━━━`,
-
-  ru:
-`👷 *ДЛЯ МАСТЕРОВ*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Находите больше клиентов
-через Homely!
-
-*Как это работает:*
-1️⃣ Зарегистрируйтесь на http://localhost:5173/register
-   как мастер
-2️⃣ Заполните профиль полностью
-3️⃣ Загрузите документы
-4️⃣ Дождитесь одобрения админа
-5️⃣ Получайте заказы
-6️⃣ Зарабатывайте деньги 💰
-
-*Почему Homely?*
-✅ Бесплатная регистрация
-📱 Мгновенные Telegram уведомления
-⭐ Система рейтингов и отзывов
-💰 Безопасные платежи
-🏆 Широкая база клиентов
-
-━━━━━━━━━━━━━━━━━━━━━━━
-💡 Подключите Chat ID и
-никогда не пропускайте
-запросы на работу! 🔔
-━━━━━━━━━━━━━━━━━━━━━━━`,
-
-  en:
-`👷 *FOR WORKERS*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Find more customers through
-Homely!
-
-*How it works:*
-1️⃣ Register on http://localhost:5173/register
-   as a service worker
-2️⃣ Complete your profile fully
-3️⃣ Upload your documents
-4️⃣ Wait for admin approval
-5️⃣ Receive job requests
-6️⃣ Earn money 💰
-
-*Why Homely?*
-✅ Free registration
-📱 Instant Telegram notifications
-⭐ Rating and review system
-💰 Secure payments
-🏆 Growing customer base
-
-━━━━━━━━━━━━━━━━━━━━━━━
-💡 Connect your Chat ID and
-never miss a single
-job request! 🔔
-━━━━━━━━━━━━━━━━━━━━━━━`,
+const chatIdMsg = (lang, chatId) => {
+  const lines = {
+    uz: `🔑 *Sizning Chat ID'ingiz:*\n\`${chatId}\`\n\nBu ID'ni Homely saytida *Sozlamalar → Telegram* bo'limiga joylashtiring.`,
+    ru: `🔑 *Ваш Chat ID:*\n\`${chatId}\`\n\nВставьте этот ID в *Настройки → Telegram* на сайте Homely.`,
+    en: `🔑 *Your Chat ID:*\n\`${chatId}\`\n\nPaste this ID in *Settings → Telegram* on the Homely site.`,
+  };
+  return lines[lang];
 };
 
-// ─── Main Menu prompt ──────────────────────────────────────────────────────────
-
-const mainMenuPrompt = {
-  uz: '👇 *Bosh menyu*\n━━━━━━━━━━━━━━━━━━━━━━━',
-  ru: '👇 *Главное меню*\n━━━━━━━━━━━━━━━━━━━━━━━',
-  en: '👇 *Main Menu*\n━━━━━━━━━━━━━━━━━━━━━━━',
-};
-
-// ─── Chat ID help message ──────────────────────────────────────────────────────
-
-const chatIdHelpMsg = {
-  uz: (chatId) => `🔑 *Sizning Chat ID'ingiz:*\n\`${chatId}\`\n\nhttp://localhost:5173/telegram-connect → ID ni joylashtiring.`,
-  ru: (chatId) => `🔑 *Ваш Chat ID:*\n\`${chatId}\`\n\nhttp://localhost:5173/telegram-connect → Вставьте ID.`,
-  en: (chatId) => `🔑 *Your Chat ID:*\n\`${chatId}\`\n\nhttp://localhost:5173/telegram-connect → Paste this ID.`,
-};
-
-// ─── About message ─────────────────────────────────────────────────────────────
-
-const aboutMsg = {
-  uz:
-`ℹ️ *HOMELY HAQIDA*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Homely — O'zbekistondagi uy
-xizmatlari uchun №1 platforma.
-
-Toshkentdagi uy egalari va
-ishonchli ustalarni bog'laymiz.
-
-🌐 http://localhost:5173
-📧 info@homely.uz
-📞 +998 91 977 9202
-━━━━━━━━━━━━━━━━━━━━━━━`,
-
-  ru:
-`ℹ️ *О HOMELY*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Homely — платформа №1 для
-домашних услуг в Узбекистане.
-
-Связываем владельцев жилья
-с надёжными мастерами Ташкента.
-
-🌐 http://localhost:5173
-📧 info@homely.uz
-📞 +998 91 977 9202
-━━━━━━━━━━━━━━━━━━━━━━━`,
-
-  en:
-`ℹ️ *ABOUT HOMELY*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Homely is Uzbekistan's #1 platform
-for home services.
-
-We connect Tashkent homeowners
-with trusted local workers.
-
-🌐 http://localhost:5173
-📧 info@homely.uz
-📞 +998 91 977 9202
-━━━━━━━━━━━━━━━━━━━━━━━`,
-};
-
-// ─── Help message ──────────────────────────────────────────────────────────────
-
-const helpMsg = {
-  uz:
-`❓ *YORDAM*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Muammo yuzaga keldimi?
-
-📧 info@homely.uz ga yozing
-📞 +998 91 977 9202 ga qo'ng'iroq qiling
-
-Bot buyruqlari:
-/start — Bosh menyuga qaytish
-━━━━━━━━━━━━━━━━━━━━━━━`,
-
-  ru:
-`❓ *ПОМОЩЬ*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Возникла проблема?
-
-📧 Напишите: info@homely.uz
-📞 Позвоните: +998 91 977 9202
-
-Команды бота:
-/start — Вернуться в главное меню
-━━━━━━━━━━━━━━━━━━━━━━━`,
-
-  en:
-`❓ *HELP*
-━━━━━━━━━━━━━━━━━━━━━━━
-
-Having an issue?
-
-📧 Email: info@homely.uz
-📞 Call: +998 91 977 9202
-
-Bot commands:
-/start — Return to main menu
-━━━━━━━━━━━━━━━━━━━━━━━`,
+const helpMsg = (lang) => {
+  const lines = {
+    uz: `❓ *Yordam*\n\n📧 info@homely.uz\n📞 +998 91 977 9202\n\n/start — Bosh menyuga qaytish`,
+    ru: `❓ *Помощь*\n\n📧 info@homely.uz\n📞 +998 91 977 9202\n\n/start — Вернуться в главное меню`,
+    en: `❓ *Help*\n\n📧 info@homely.uz\n📞 +998 91 977 9202\n\n/start — Return to main menu`,
+  };
+  return lines[lang];
 };
 
 // ─── Bot initialization ────────────────────────────────────────────────────────
@@ -480,83 +175,81 @@ if (token) {
   try {
     bot = new TelegramBot(token, { polling: true });
 
-    // /start — send logo then language picker
+    // Register /start so Telegram shows it as a tappable command button
+    bot.setMyCommands([
+      { command: 'start', description: 'Open main menu' },
+    ]).catch(() => {});
+
     bot.onText(/\/start/, async (msg) => {
       const chatId = msg.chat.id;
-
-      // If user has already chosen a language, skip logo and go straight to lang selection
-      await safeSend(chatId, '🏠 *HOMELY — Your Home, In Safe Hands.*');
-
-      await delay(1000);
-
       await safeSend(
         chatId,
-        '🌐 *Choose your language*\n━━━━━━━━━━━━━━━━━━━━━━━\nTilni tanlang | Выберите язык\nSelect your language\n━━━━━━━━━━━━━━━━━━━━━━━',
+        '🌐 Tilni tanlang | Выберите язык | Choose language',
         { reply_markup: langKeyboard }
       );
     });
 
-    // ── Callback query handler ───────────────────────────────────────────────
     bot.on('callback_query', async (query) => {
-      const chatId  = query.message.chat.id;
-      const data    = query.data;
+      const chatId    = query.message.chat.id;
+      const data      = query.data;
       const firstName = query.from.first_name || 'there';
 
-      // Always acknowledge the button press
       bot.answerCallbackQuery(query.id).catch(() => {});
 
-      // ── Language selection ─────────────────────────────────────────────────
       if (['lang_uz', 'lang_ru', 'lang_en'].includes(data)) {
         const lang = data.replace('lang_', '');
         userLanguages.set(chatId, lang);
-
-        await safeSend(chatId, welcomeMsg[lang](firstName, chatId));
-        await delay(1000);
-        await safeSend(chatId, rolePrompt[lang], { reply_markup: roleKeyboard[lang] });
+        // Show persistent bottom buttons first, then the welcome card
+        await safeSend(chatId, t(lang, '✅ Til tanlandi', '✅ Язык выбран', '✅ Language selected'), { reply_markup: replyKeyboard(lang) });
+        await safeSend(chatId, welcomeMsg(lang, firstName, chatId), { reply_markup: mainKeyboard(lang) });
         return;
       }
 
       const lang = userLanguages.get(chatId) || 'en';
 
-      // ── Role callbacks ─────────────────────────────────────────────────────
+      if (data === 'main_menu') {
+        await safeSend(chatId, t(lang, '👇 Bosh menyu', '👇 Главное меню', '👇 Main Menu'), { reply_markup: mainKeyboard(lang) });
+        return;
+      }
+
       if (data === 'need_service') {
-        await safeSend(chatId, customerMsg[lang], { reply_markup: backKeyboard(lang) });
+        await safeSend(chatId, customerMsg(lang), { reply_markup: backKeyboard(lang) });
         return;
       }
 
       if (data === 'am_worker') {
-        await safeSend(chatId, workerMsg[lang], { reply_markup: workerBackKeyboard(lang) });
-        return;
-      }
-
-      // ── Navigation callbacks ───────────────────────────────────────────────
-      if (data === 'main_menu') {
-        await safeSend(chatId, mainMenuPrompt[lang], { reply_markup: roleKeyboard[lang] });
+        await safeSend(chatId, workerMsg(lang), { reply_markup: backKeyboard(lang) });
         return;
       }
 
       if (data === 'chatid_help') {
-        await safeSend(chatId, chatIdHelpMsg[lang](chatId));
-        return;
-      }
-
-      if (data === 'about') {
-        await safeSend(chatId, aboutMsg[lang], {
-          reply_markup: { inline_keyboard: [[{ text: lang === 'uz' ? '🏠 Bosh menyu' : lang === 'ru' ? '🏠 Главное меню' : '🏠 Main Menu', callback_data: 'main_menu' }]] },
-        });
+        await safeSend(chatId, chatIdMsg(lang, chatId), { reply_markup: backKeyboard(lang) });
         return;
       }
 
       if (data === 'help') {
-        await safeSend(chatId, helpMsg[lang], {
-          reply_markup: { inline_keyboard: [[{ text: lang === 'uz' ? '🏠 Bosh menyu' : lang === 'ru' ? '🏠 Главное меню' : '🏠 Main Menu', callback_data: 'main_menu' }]] },
-        });
+        await safeSend(chatId, helpMsg(lang), { reply_markup: backKeyboard(lang) });
         return;
       }
+    });
 
-      if (data === 'website') {
-        await safeSend(chatId, '🌐 http://localhost:5173');
-        return;
+    // Handle persistent reply keyboard button presses (text messages)
+    bot.on('message', async (msg) => {
+      if (!msg.text || msg.text.startsWith('/')) return;
+      const chatId = msg.chat.id;
+      const text   = msg.text;
+      const lang   = userLanguages.get(chatId) || 'en';
+
+      const isBtn = (uz, ru, en) => text === uz || text === ru || text === en;
+
+      if (isBtn('🏡 Mijozman', '🏡 Я клиент', '🏡 I need help')) {
+        await safeSend(chatId, customerMsg(lang), { reply_markup: backKeyboard(lang) });
+      } else if (isBtn('👷 Ustaman', '👷 Я мастер', '👷 I am a worker')) {
+        await safeSend(chatId, workerMsg(lang), { reply_markup: backKeyboard(lang) });
+      } else if (isBtn('🔑 Chat ID', '🔑 Chat ID', '🔑 Chat ID')) {
+        await safeSend(chatId, chatIdMsg(lang, chatId));
+      } else if (isBtn('❓ Yordam', '❓ Помощь', '❓ Help')) {
+        await safeSend(chatId, helpMsg(lang));
       }
     });
 
@@ -574,9 +267,9 @@ const sendNewBookingNotification = async (booking, workerUser, customer) => {
   const date = new Date(booking.scheduledDate).toLocaleDateString('en-GB');
 
   const msgs = {
-    uz: `🔔 *Yangi buyurtma!*\n\n👤 Mijoz: ${customer.name}\n📞 Tel: ${customer.phone}\n🔧 Xizmat: ${booking.service}\n📅 Sana: ${date} soat ${booking.scheduledTime}\n📍 Manzil: ${booking.address}\n💰 Narx: ${booking.price.toLocaleString()} UZS\n\nHomely'ga kiring va qabul qiling!`,
-    ru:  `🔔 *Новый заказ!*\n\n👤 Клиент: ${customer.name}\n📞 Тел: ${customer.phone}\n🔧 Услуга: ${booking.service}\n📅 Дата: ${date} в ${booking.scheduledTime}\n📍 Адрес: ${booking.address}\n💰 Цена: ${booking.price.toLocaleString()} UZS\n\nВойдите в Homely и примите заказ!`,
-    en:  `🔔 *New Booking Request!*\n\n👤 Customer: ${customer.name}\n📞 Phone: ${customer.phone}\n🔧 Service: ${booking.service}\n📅 Date: ${date} at ${booking.scheduledTime}\n📍 Address: ${booking.address}\n💰 Price: ${booking.price.toLocaleString()} UZS\n\nLog in to Homely to accept or decline.`,
+    uz: `🔔 *Yangi buyurtma!*\n\n👤 ${customer.name} · 📞 ${customer.phone}\n🔧 ${booking.service}\n📅 ${date} soat ${booking.scheduledTime}\n📍 ${booking.address}\n💰 ${booking.price.toLocaleString()} UZS`,
+    ru: `🔔 *Новый заказ!*\n\n👤 ${customer.name} · 📞 ${customer.phone}\n🔧 ${booking.service}\n📅 ${date} в ${booking.scheduledTime}\n📍 ${booking.address}\n💰 ${booking.price.toLocaleString()} UZS`,
+    en: `🔔 *New Booking!*\n\n👤 ${customer.name} · 📞 ${customer.phone}\n🔧 ${booking.service}\n📅 ${date} at ${booking.scheduledTime}\n📍 ${booking.address}\n💰 ${booking.price.toLocaleString()} UZS`,
   };
   await safeSend(workerUser.telegramChatId, msgs[lang] || msgs.en);
 };
@@ -587,9 +280,9 @@ const sendBookingConfirmedNotification = async (booking, workerUser, customer) =
   const date = new Date(booking.scheduledDate).toLocaleDateString('en-GB');
 
   const msgs = {
-    uz: `✅ *Buyurtma tasdiqlandi!*\n\n👷 Usta: ${workerUser.name}\n📞 Tel: ${workerUser.phone}\n🔧 Xizmat: ${booking.service}\n📅 Sana: ${date} soat ${booking.scheduledTime}\n📍 Manzil: ${booking.address}\n\nUsta belgilangan vaqtda keladi. 🏠`,
-    ru: `✅ *Заказ подтверждён!*\n\n👷 Мастер: ${workerUser.name}\n📞 Тел: ${workerUser.phone}\n🔧 Услуга: ${booking.service}\n📅 Дата: ${date} в ${booking.scheduledTime}\n📍 Адрес: ${booking.address}\n\nМастер прибудет в назначенное время. 🏠`,
-    en: `✅ *Booking Confirmed!*\n\n👷 Worker: ${workerUser.name}\n📞 Phone: ${workerUser.phone}\n🔧 Service: ${booking.service}\n📅 Date: ${date} at ${booking.scheduledTime}\n📍 Address: ${booking.address}\n\nThe worker will arrive at the scheduled time. 🏠`,
+    uz: `✅ *Buyurtma tasdiqlandi!*\n\n👷 ${workerUser.name} · 📞 ${workerUser.phone}\n🔧 ${booking.service}\n📅 ${date} soat ${booking.scheduledTime}\n📍 ${booking.address}`,
+    ru: `✅ *Заказ подтверждён!*\n\n👷 ${workerUser.name} · 📞 ${workerUser.phone}\n🔧 ${booking.service}\n📅 ${date} в ${booking.scheduledTime}\n📍 ${booking.address}`,
+    en: `✅ *Booking Confirmed!*\n\n👷 ${workerUser.name} · 📞 ${workerUser.phone}\n🔧 ${booking.service}\n📅 ${date} at ${booking.scheduledTime}\n📍 ${booking.address}`,
   };
   await safeSend(customer.telegramChatId, msgs[lang] || msgs.en);
 };
@@ -601,9 +294,9 @@ const sendBookingCancelledNotification = async (booking, recipientUser, cancelle
 
   const by = { uz: cancelledBy === 'customer' ? 'mijoz' : 'usta', ru: cancelledBy === 'customer' ? 'клиентом' : 'мастером', en: cancelledBy };
   const msgs = {
-    uz: `❌ *Buyurtma bekor qilindi*\n\n${by.uz} tomonidan bekor qilindi.\n\n🔧 Xizmat: ${booking.service}\n📅 Sana: ${date} soat ${booking.scheduledTime}\n\nHomely'da boshqa usta toping! 🔍`,
-    ru: `❌ *Заказ отменён*\n\nОтменён ${by.ru}.\n\n🔧 Услуга: ${booking.service}\n📅 Дата: ${date} в ${booking.scheduledTime}\n\nНайдите другого мастера на Homely! 🔍`,
-    en: `❌ *Booking Cancelled*\n\nCancelled by the ${by.en}.\n\n🔧 Service: ${booking.service}\n📅 Date: ${date} at ${booking.scheduledTime}\n\nFind another worker on Homely! 🔍`,
+    uz: `❌ *Buyurtma bekor qilindi* (${by.uz})\n\n🔧 ${booking.service} · 📅 ${date} soat ${booking.scheduledTime}`,
+    ru: `❌ *Заказ отменён* (${by.ru})\n\n🔧 ${booking.service} · 📅 ${date} в ${booking.scheduledTime}`,
+    en: `❌ *Booking Cancelled* (by ${by.en})\n\n🔧 ${booking.service} · 📅 ${date} at ${booking.scheduledTime}`,
   };
   await safeSend(recipientUser.telegramChatId, msgs[lang] || msgs.en);
 };
@@ -611,9 +304,9 @@ const sendBookingCancelledNotification = async (booking, recipientUser, cancelle
 const sendWelcomeMessage = async (chatId, name) => {
   const lang = userLanguages.get(Number(chatId)) || 'en';
   const msgs = {
-    uz: `🎉 *Homely'ga ulandi!*\n\nSalom ${name}! Endi barcha buyurtmalar haqida shu yerda xabar olasiz.\n\n🏠 *Homely* — Uyingiz ishonchli qo'llarda.`,
-    ru: `🎉 *Подключено к Homely!*\n\nПривет ${name}! Теперь вы будете получать уведомления здесь.\n\n🏠 *Homely* — Ваш дом в надёжных руках.`,
-    en: `🎉 *Connected to Homely!*\n\nHi ${name}! You will now receive booking notifications here.\n\n🏠 *Homely* — Your Home, In Safe Hands.`,
+    uz: `🎉 *Ulandi!* Salom ${name}! Endi buyurtmalar haqida shu yerda xabar olasiz. 🏠`,
+    ru: `🎉 *Подключено!* Привет ${name}! Теперь вы будете получать уведомления здесь. 🏠`,
+    en: `🎉 *Connected!* Hi ${name}! You'll now receive booking notifications here. 🏠`,
   };
   await safeSend(chatId, msgs[lang] || msgs.en);
 };
