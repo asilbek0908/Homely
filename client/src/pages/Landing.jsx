@@ -1,24 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import WorkerCard from '../components/WorkerCard';
 import { useLanguage } from '../context/LanguageContext';
+import { getAllWorkers } from '../services/worker.service';
 
 const SERVICES_KEYS = ['Plumbing', 'Electrical', 'AC Repair'];
 const SERVICE_ICONS = { Plumbing: '🔧', Electrical: '⚡', 'AC Repair': '❄️' };
 
 const DISTRICTS = ['Chilonzor', 'Yunusabad', 'Mirzo Ulugbek', 'Shaykhontohur', 'Uchtepa', 'Bektemir', 'Sergeli', 'Yashnobod'];
 
-const MOCK_WORKERS = [
-  { _id: '1', user: { name: 'Kamol Nazarov' }, services: ['Plumbing'], rating: 4.8, totalReviews: 47, jobRate: 50000, location: { district: 'Chilonzor' }, isVerified: true },
-  { _id: '2', user: { name: 'Sarvar Rakhimov' }, services: ['Electrical'], rating: 4.9, totalReviews: 63, jobRate: 60000, location: { district: 'Yunusabad' }, isVerified: true },
-  { _id: '3', user: { name: 'Mansur Umarov' }, services: ['AC Repair'], rating: 4.7, totalReviews: 38, jobRate: 40000, location: { district: 'Mirzo Ulugbek' }, isVerified: true },
-];
-
 const Landing = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [service, setService] = useState('');
   const [district, setDistrict] = useState('');
+  const [topWorkers, setTopWorkers] = useState([]);
+
+  useEffect(() => {
+    getAllWorkers()
+      .then((data) => setTopWorkers((data.workers || []).slice(0, 3)))
+      .catch(() => setTopWorkers([]));
+  }, []);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -121,20 +123,23 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* FEATURED WORKERS */}
-      <section className="max-w-5xl mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold text-gray-900 text-center mb-3">{t('landing.featuredTitle')}</h2>
-        <p className="text-gray-500 text-center mb-10">{t('landing.featuredSubtitle')}</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {MOCK_WORKERS.map((w) => <WorkerCard key={w._id} worker={w} />)}
-        </div>
-        <div className="text-center mt-8">
-          <button onClick={() => navigate('/workers')}
-            className="border-2 border-[#1A56DB] text-[#1A56DB] px-8 py-3 rounded-xl font-semibold hover:bg-[#1A56DB] hover:text-white transition-all">
-            {t('landing.viewAll')}
-          </button>
-        </div>
-      </section>
+      {/* FEATURED WORKERS — only shown when workers exist */}
+      {topWorkers.length > 0 && (
+        <section className="max-w-5xl mx-auto px-4 py-16">
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-3">{t('landing.featuredTitle')}</h2>
+          <p className="text-gray-500 text-center mb-10">{t('landing.featuredSubtitle')}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {topWorkers.map((w) => <WorkerCard key={w._id} worker={w} />)}
+          </div>
+          <div className="text-center mt-8">
+            <button onClick={() => navigate('/workers')}
+              className="border-2 border-[#1A56DB] text-[#1A56DB] px-8 py-3 rounded-xl font-semibold hover:bg-[#1A56DB] hover:text-white transition-all">
+              {t('landing.viewAll')}
+            </button>
+          </div>
+        </section>
+      )}
+
 
       {/* CTA */}
       <section style={{ backgroundColor: '#1A56DB' }} className="py-16 px-4 text-center text-white">

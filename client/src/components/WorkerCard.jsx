@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 
 const formatUZS = (amount) =>
   new Intl.NumberFormat('uz-UZ').format(amount) + ' UZS';
@@ -17,7 +18,18 @@ const StarRating = ({ rating }) => (
 
 const WorkerCard = ({ worker }) => {
   const { t } = useLanguage();
+  const { user: authUser } = useAuth();
+  const navigate = useNavigate();
   const user = worker.user || {};
+
+  const handleProtectedClick = (e, path) => {
+    if (!authUser) {
+      e.preventDefault();
+      navigate('/register');
+    } else {
+      navigate(path);
+    }
+  };
   const avatarUrl = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'W')}&background=1A56DB&color=fff`;
 
   return (
@@ -62,10 +74,12 @@ const WorkerCard = ({ worker }) => {
       {/* Buttons */}
       <div className="flex gap-2 mt-1">
         <Link to={`/workers/${worker._id}`}
+          onClick={(e) => handleProtectedClick(e, `/workers/${worker._id}`)}
           className="flex-1 text-center text-sm font-medium border border-[#1A56DB] text-[#1A56DB] px-3 py-2 rounded-lg hover:bg-blue-50">
           {t('common.viewProfile')}
         </Link>
         <Link to={`/workers/${worker._id}`}
+          onClick={(e) => handleProtectedClick(e, `/workers/${worker._id}`)}
           className="flex-1 text-center text-sm font-medium bg-[#F97316] text-white px-3 py-2 rounded-lg hover:bg-orange-600">
           {t('common.bookNow')}
         </Link>

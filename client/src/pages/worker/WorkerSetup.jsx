@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createWorkerProfile } from '../../services/worker.service';
+import { uploadPortfolio } from '../../services/upload.service';
 import { useLanguage } from '../../context/LanguageContext';
 
 const SERVICES = ['Plumbing', 'Electrical', 'AC Repair'];
@@ -13,6 +14,7 @@ const WorkerSetup = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const fileInputRef = useRef(null);
 
   const TIME_SLOTS = [
     { label: t('workerSetup.morning'), slots: ['08:00', '09:00', '10:00', '11:00'] },
@@ -25,6 +27,10 @@ const WorkerSetup = () => {
     services: [],
     availability: DAYS.map((day) => ({ day, slots: [] })),
   });
+  const [photoFiles, setPhotoFiles] = useState([]);
+  const [photoPreviews, setPhotoPreviews] = useState([]);
+
+  const TOTAL_STEPS = 4;
 
   const toggleService = (s) => {
     setForm((f) => ({
@@ -43,15 +49,32 @@ const WorkerSetup = () => {
     });
   };
 
+  const handlePhotoChange = (e) => {
+    const files = Array.from(e.target.files);
+    setPhotoFiles(files);
+    setPhotoPreviews(files.map((f) => URL.createObjectURL(f)));
+  };
+
+  const removePhoto = (index) => {
+    setPhotoFiles((prev) => prev.filter((_, i) => i !== index));
+    setPhotoPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async () => {
     setError('');
     setLoading(true);
     try {
       await createWorkerProfile({
-        bio: form.bio, experience: Number(form.experience), jobRate: Number(form.jobRate),
-        services: form.services, location: { district: form.district, city: 'Tashkent' },
+        bio: form.bio,
+        experience: Number(form.experience),
+        jobRate: Number(form.jobRate),
+        services: form.services,
+        location: { district: form.district, city: 'Tashkent' },
         availability: form.availability.filter((d) => d.slots.length > 0),
       });
+      if (photoFiles.length > 0) {
+        await uploadPortfolio(photoFiles);
+      }
       navigate('/worker/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create profile');
@@ -70,8 +93,8 @@ const WorkerSetup = () => {
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${i + 1 <= step ? 'bg-[#1A56DB] text-white' : 'bg-gray-200 text-gray-500'}`}>
               {i + 1 < step ? '✓' : i + 1}
             </div>
-            <span className={`ml-2 text-sm hidden sm:block ${i + 1 === step ? 'text-[#1A56DB] font-medium' : 'text-gray-400'}`}>{label}</span>
-            {i < 2 && <div className={`w-12 sm:w-24 h-1 mx-2 rounded ${i + 1 < step ? 'bg-[#1A56DB]' : 'bg-gray-200'}`} />}
+            <span className={`ml-1 text-xs hidden sm:block ${i + 1 === step ? 'text-[#1A56DB] font-medium' : 'text-gray-400'}`}>{label}</span>
+            {i < TOTAL_STEPS - 1 && <div className={`w-6 sm:w-12 h-1 mx-1 sm:mx-2 rounded ${i + 1 < step ? 'bg-[#1A56DB]' : 'bg-gray-200'}`} />}
           </div>
         ))}
       </div>
@@ -90,6 +113,7 @@ const WorkerSetup = () => {
 
         {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{error}</div>}
 
+        {/* Step 1: Basic Info */}
         {step === 1 && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-gray-900 mb-4">{t('workerSetup.basicInfo')}</h2>
@@ -126,6 +150,7 @@ const WorkerSetup = () => {
           </div>
         )}
 
+        {/* Step 2: Services */}
         {step === 2 && (
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">{t('workerSetup.selectServices')}</h2>
@@ -144,6 +169,7 @@ const WorkerSetup = () => {
           </div>
         )}
 
+        {/* Step 3: Availability */}
         {step === 3 && (
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">{t('workerSetup.setAvailability')}</h2>
@@ -171,6 +197,46 @@ const WorkerSetup = () => {
           </div>
         )}
 
+        {/* Step 4: Portfolio Photos */}
+        {step === 4 && (
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('workerSetup.photos')}</h2>
+            <p className="text-gray-500 text-sm mb-5">{t('workerSetup.photosHint')}</p>
+
+            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
+              onChange={handlePhotoChange} />
+
+            <button onClick={() => fileInputRef.current.click()}
+              className="w-full border-2 border-dashed border-gray-300 rounded-xl py-10 text-center hover:border-[#1A56DB] transition-colors">
+              <div className="text-4xl mb-2">📷</div>
+              <p className="text-sm text-gray-500">{t('workerSetup.uploadPhotos')}</p>
+            </button>
+
+            {photoPreviews.length > 0 && (
+              <div className="mt-4 grid grid-cols-3 gap-3">
+                {photoPreviews.map((src, i) => (
+                  <div key={i} className="relative group">
+                    <img src={src} alt="" className="w-full h-24 object-cover rounded-lg" />
+                    <button onClick={() => removePhoto(i)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {photoPreviews.length > 0 && (
+              <p className="text-sm text-[#1A56DB] mt-3 text-center">
+                {typeof t('workerSetup.photosSelected') === 'function'
+                  ? t('workerSetup.photosSelected')(photoPreviews.length)
+                  : `${photoPreviews.length} photo(s) selected`}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Navigation Buttons */}
         <div className="flex gap-3 mt-8">
           {step > 1 && (
             <button onClick={() => setStep(step - 1)}
@@ -178,9 +244,16 @@ const WorkerSetup = () => {
               {t('common.back')}
             </button>
           )}
-          {step < 3 ? (
+          {step < TOTAL_STEPS ? (
             <button onClick={() => {
-              if (step === 2 && form.services.length === 0) { setError(t('workerSetup.selectMin')); return; }
+              if (step === 1 && (!form.bio || !form.experience || !form.jobRate || !form.district)) {
+                setError(t('workerSetup.fillBasicInfo') || 'Please fill in all basic info fields');
+                return;
+              }
+              if (step === 2 && form.services.length === 0) {
+                setError(t('workerSetup.selectMin'));
+                return;
+              }
               setError('');
               setStep(step + 1);
             }}

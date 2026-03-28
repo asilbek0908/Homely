@@ -77,21 +77,21 @@ const welcomeMsg = (lang, firstName, chatId) => {
 🔑 *Sizning Chat ID'ingiz:*
 \`${chatId}\`
 
-Bu ID'ni Homely saytidagi *Sozlamalar → Telegram* bo'limiga joylashtiring — shundan so'ng buyurtmalar haqida darhol xabar olasiz. 🔔`,
+Bu ID'ni [Homely saytidagi Sozlamalar → Telegram](https://homely-alpha.vercel.app/telegram-connect) bo'limiga joylashtiring — shundan so'ng buyurtmalar haqida darhol xabar olasiz. 🔔`,
 
     ru: `👋 Привет, *${firstName}*! Добро пожаловать в бот Homely.
 
 🔑 *Ваш Chat ID:*
 \`${chatId}\`
 
-Вставьте этот ID в *Настройки → Telegram* на сайте Homely — и получайте мгновенные уведомления о заказах. 🔔`,
+Вставьте этот ID в [Настройки → Telegram](https://homely-alpha.vercel.app/telegram-connect) на сайте Homely — и получайте мгновенные уведомления о заказах. 🔔`,
 
     en: `👋 Hello, *${firstName}*! Welcome to the Homely bot.
 
 🔑 *Your Chat ID:*
 \`${chatId}\`
 
-Paste this ID in *Settings → Telegram* on the Homely site to receive instant booking notifications. 🔔`,
+Paste this ID in [Settings → Telegram](https://homely-alpha.vercel.app/telegram-connect) on the Homely site to receive instant booking notifications. 🔔`,
   };
   return lines[lang];
 };
@@ -100,7 +100,7 @@ const customerMsg = (lang) => {
   const lines = {
     uz: `🏡 *Uy egasi uchun*
 
-1️⃣ Saytga kiring: http://localhost:5173/register
+1️⃣ [Saytga kiring va ro'yxatdan o'ting](https://homely-alpha.vercel.app/register)
 2️⃣ Xizmatni tanlang va usta buyurtma qiling
 3️⃣ Ish tugagandan so'ng to'lang
 
@@ -108,7 +108,7 @@ const customerMsg = (lang) => {
 
     ru: `🏡 *Для клиентов*
 
-1️⃣ Зарегистрируйтесь: http://localhost:5173/register
+1️⃣ [Зарегистрируйтесь на сайте](https://homely-alpha.vercel.app/register)
 2️⃣ Выберите услугу и закажите мастера
 3️⃣ Оплатите после выполнения работы
 
@@ -116,7 +116,7 @@ const customerMsg = (lang) => {
 
     en: `🏡 *For Homeowners*
 
-1️⃣ Register at: http://localhost:5173/register
+1️⃣ [Register on the website](https://homely-alpha.vercel.app/register)
 2️⃣ Choose a service and book a worker
 3️⃣ Pay only after the job is done
 
@@ -129,21 +129,21 @@ const workerMsg = (lang) => {
   const lines = {
     uz: `👷 *Usta uchun*
 
-1️⃣ Ro'yxatdan o'ting: http://localhost:5173/register
+1️⃣ [Saytga kiring va ro'yxatdan o'ting](https://homely-alpha.vercel.app/register)
 2️⃣ Profilingizni to'ldiring va hujjat yuklang
 3️⃣ Admin tasdiqlashini kuting
 4️⃣ Buyurtmalarni qabul qiling va pul ishlang 💰`,
 
     ru: `👷 *Для мастеров*
 
-1️⃣ Зарегистрируйтесь: http://localhost:5173/register
+1️⃣ [Зарегистрируйтесь на сайте](https://homely-alpha.vercel.app/register)
 2️⃣ Заполните профиль и загрузите документы
 3️⃣ Дождитесь одобрения администратора
 4️⃣ Принимайте заказы и зарабатывайте 💰`,
 
     en: `👷 *For Workers*
 
-1️⃣ Register at: http://localhost:5173/register
+1️⃣ [Register on the website](https://homely-alpha.vercel.app/register)
 2️⃣ Fill in your profile and upload documents
 3️⃣ Wait for admin approval
 4️⃣ Accept job requests and earn money 💰`,
@@ -153,9 +153,9 @@ const workerMsg = (lang) => {
 
 const chatIdMsg = (lang, chatId) => {
   const lines = {
-    uz: `🔑 *Sizning Chat ID'ingiz:*\n\`${chatId}\`\n\nBu ID'ni Homely saytida *Sozlamalar → Telegram* bo'limiga joylashtiring.`,
-    ru: `🔑 *Ваш Chat ID:*\n\`${chatId}\`\n\nВставьте этот ID в *Настройки → Telegram* на сайте Homely.`,
-    en: `🔑 *Your Chat ID:*\n\`${chatId}\`\n\nPaste this ID in *Settings → Telegram* on the Homely site.`,
+    uz: `🔑 *Sizning Chat ID'ingiz:*\n\`${chatId}\`\n\nBu ID'ni [Sozlamalar → Telegram](https://homely-alpha.vercel.app/telegram-connect) bo'limiga joylashtiring.`,
+    ru: `🔑 *Ваш Chat ID:*\n\`${chatId}\`\n\nВставьте этот ID в [Настройки → Telegram](https://homely-alpha.vercel.app/telegram-connect).`,
+    en: `🔑 *Your Chat ID:*\n\`${chatId}\`\n\nPaste this ID in [Settings → Telegram](https://homely-alpha.vercel.app/telegram-connect).`,
   };
   return lines[lang];
 };
