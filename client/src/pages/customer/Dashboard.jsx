@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { getCustomerBookings } from '../../services/booking.service';
 import { uploadAvatar } from '../../services/upload.service';
+import { updateProfile } from '../../services/auth.service';
 import BookingCard from '../../components/BookingCard';
 
 const formatUZS = (n) => new Intl.NumberFormat('uz-UZ').format(n) + ' UZS';
@@ -16,6 +17,9 @@ const CustomerDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef(null);
+  const [profileForm, setProfileForm] = useState({ name: '', phone: '', district: '' });
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState('');
 
   const fetchData = async () => {
     try {
@@ -43,6 +47,35 @@ const CustomerDashboard = () => {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        name: user.name || '',
+        phone: user.phone || '',
+        district: user.location?.district || '',
+      });
+    }
+  }, [user]);
+
+  const handleProfileSave = async (e) => {
+    e.preventDefault();
+    setProfileSaving(true);
+    setProfileMsg('');
+    try {
+      const data = await updateProfile({
+        name: profileForm.name,
+        phone: profileForm.phone,
+        location: { district: profileForm.district, city: 'Tashkent' },
+      });
+      updateUser({ name: data.user.name, phone: data.user.phone, location: data.user.location });
+      setProfileMsg('success');
+    } catch {
+      setProfileMsg('error');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
 
   const stats = {
     active: bookings.filter((b) => ['pending', 'confirmed', 'inProgress'].includes(b.status)).length,
@@ -72,6 +105,7 @@ const CustomerDashboard = () => {
           {[
             { id: 'dashboard', label: t('common.dashboard'), icon: '🏠' },
             { id: 'bookings', label: t('customerDash.myBookings'), icon: '📋' },
+            { id: 'profile', label: t('customerDash.profile'), icon: '👤' },
             { id: 'workers', label: t('customerDash.findWorkers'), icon: '🔍', href: '/workers' },
           ].map((item) => (
             item.href
@@ -100,7 +134,7 @@ const CustomerDashboard = () => {
           <div className="relative group">
             <button onClick={() => avatarInputRef.current?.click()} className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-gray-200 hover:border-[#1A56DB] transition-colors">
               {user?.avatar ? (
-                <img src={`http://localhost:5000${user.avatar}`} alt="" className="w-full h-full object-cover" />
+                <img src={user.avatar.startsWith('http') ? user.avatar : `http://localhost:5000${user.avatar}`} alt="" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-[#1A56DB] flex items-center justify-center text-white text-xl font-bold">
                   {user?.name?.[0]?.toUpperCase()}
@@ -129,7 +163,49 @@ const CustomerDashboard = () => {
           ))}
         </div>
 
-        {activeTab === 'bookings' ? (
+        {activeTab === 'profile' ? (
+          <section className="max-w-lg">
+            <h2 className="text-lg font-bold text-gray-900 mb-6">{t('customerDash.editProfile')}</h2>
+            <form onSubmit={handleProfileSave} className="bg-white rounded-xl p-6 shadow-sm space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('customerDash.email')}</label>
+                <input value={user?.email || ''} disabled
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-400 cursor-not-allowed" />
+                <p className="text-xs text-gray-400 mt-1">{t('customerDash.emailNote')}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('customerDash.name')}</label>
+                <input value={profileForm.name}
+                  onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A56DB]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('customerDash.phone')}</label>
+                <input value={profileForm.phone}
+                  onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A56DB]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('customerDash.district')}</label>
+                <select value={profileForm.district}
+                  onChange={(e) => setProfileForm({ ...profileForm, district: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A56DB]">
+                  <option value="">{t('common.selectDistrict')}</option>
+                  {['Chilonzor','Yunusabad','Mirzo Ulugbek','Shaykhontohur','Uchtepa','Bektemir','Sergeli','Yashnobod'].map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+              {profileMsg === 'success' && <p className="text-green-600 text-sm">{t('customerDash.profileSaved')}</p>}
+              {profileMsg === 'error' && <p className="text-red-600 text-sm">{t('customerDash.profileError')}</p>}
+              <button type="submit" disabled={profileSaving}
+                className="w-full bg-[#1A56DB] text-white py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2">
+                {profileSaving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                {t('customerDash.saveChanges')}
+              </button>
+            </form>
+          </section>
+        ) : activeTab === 'bookings' ? (
           <section className="mb-8">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{t('customerDash.allBookings')}</h2>
             {loading ? (

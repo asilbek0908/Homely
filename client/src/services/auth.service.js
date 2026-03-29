@@ -34,3 +34,8 @@ export const resetPassword = async (token, password) => {
   const res = await api.post('/auth/reset-password', { token, password });
   return res.data;
 };
+
+export const updateProfile = async (data) => {
+  const res = await api.put('/auth/profile', data);
+  return res.data;
+};

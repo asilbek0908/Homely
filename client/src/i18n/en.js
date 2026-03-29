@@ -267,6 +267,16 @@ export default {
     noActive: 'No active bookings.',
     myBookings: 'My Bookings',
     findWorkers: 'Find Workers',
+    profile: 'My Profile',
+    editProfile: 'Edit Profile',
+    saveChanges: 'Save Changes',
+    profileSaved: 'Profile updated successfully!',
+    profileError: 'Failed to update profile.',
+    name: 'Full Name',
+    phone: 'Phone Number',
+    district: 'District',
+    email: 'Email',
+    emailNote: 'Email cannot be changed.',
   },
 
   // Worker dashboard

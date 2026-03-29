@@ -3,8 +3,15 @@ const http = require('http');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const { Server } = require('socket.io');
 require('dotenv').config();
+
+// Ensure upload directories exist
+['uploads/avatars', 'uploads/documents'].forEach((dir) => {
+  const full = path.join(__dirname, dir);
+  if (!fs.existsSync(full)) fs.mkdirSync(full, { recursive: true });
+});
 
 const authRoutes = require('./routes/auth.routes');
 const workerRoutes = require('./routes/worker.routes');

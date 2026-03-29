@@ -253,6 +253,16 @@ export default {
     noActive: 'Нет активных заказов.',
     myBookings: 'Мои заказы',
     findWorkers: 'Найти мастера',
+    profile: 'Мой профиль',
+    editProfile: 'Редактировать',
+    saveChanges: 'Сохранить',
+    profileSaved: 'Профиль обновлён!',
+    profileError: 'Ошибка обновления профиля.',
+    name: 'Полное имя',
+    phone: 'Номер телефона',
+    district: 'Район',
+    email: 'Email',
+    emailNote: 'Email нельзя изменить.',
   },
 
   workerDash: {

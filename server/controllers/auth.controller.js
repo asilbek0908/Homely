@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../utils/email');
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5000';
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -118,7 +119,7 @@ const uploadUserAvatar = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Please upload a file' });
     }
-    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const avatarUrl = `${SERVER_URL}/uploads/avatars/${req.file.filename}`;
     await User.findByIdAndUpdate(req.user._id, { avatar: avatarUrl });
     res.json({ success: true, avatar: avatarUrl });
   } catch (err) {
@@ -221,4 +222,21 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, uploadUserAvatar, verifyEmail, resendVerification, forgotPassword, resetPassword };
+// @desc    Update current user profile (name, phone, location)
+// @route   PUT /api/auth/profile
+const updateProfile = async (req, res) => {
+  try {
+    const { name, phone, location } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { name, phone, location },
+      { new: true, runValidators: true }
+    ).select('-password');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = { register, login, getMe, uploadUserAvatar, verifyEmail, resendVerification, forgotPassword, resetPassword, updateProfile };

@@ -253,6 +253,16 @@ export default {
     noActive: 'Faol buyurtmalar yo\'q.',
     myBookings: 'Buyurtmalarim',
     findWorkers: 'Usta topish',
+    profile: 'Mening profilim',
+    editProfile: 'Tahrirlash',
+    saveChanges: 'Saqlash',
+    profileSaved: 'Profil yangilandi!',
+    profileError: 'Profilni yangilashda xato.',
+    name: 'To\'liq ism',
+    phone: 'Telefon raqami',
+    district: 'Tuman',
+    email: 'Email',
+    emailNote: 'Emailni o\'zgartirish mumkin emas.',
   },
 
   workerDash: {

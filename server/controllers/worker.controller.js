@@ -1,5 +1,6 @@
 const Worker = require('../models/Worker');
 const Booking = require('../models/Booking');
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5000';
 
 // @desc    Get all verified workers with optional filters
 // @route   GET /api/workers
@@ -41,12 +42,11 @@ const getWorkerById = async (req, res) => {
 // @route   POST /api/workers
 const createWorkerProfile = async (req, res) => {
   try {
-    const existing = await Worker.findOne({ user: req.user._id });
-    if (existing) {
-      return res.status(400).json({ success: false, message: 'Worker profile already exists' });
-    }
-
-    const worker = await Worker.create({ user: req.user._id, ...req.body });
+    const worker = await Worker.findOneAndUpdate(
+      { user: req.user._id },
+      { user: req.user._id, ...req.body },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
     res.status(201).json({ success: true, worker });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -110,7 +110,7 @@ const uploadIdDocument = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Please upload a file' });
     }
-    const docUrl = `/uploads/documents/${req.file.filename}`;
+    const docUrl = `${SERVER_URL}/uploads/documents/${req.file.filename}`;
     const worker = await Worker.findOneAndUpdate(
       { user: req.user._id },
       { idDocument: docUrl },
@@ -132,7 +132,7 @@ const uploadPortfolio = async (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, message: 'Please upload at least one file' });
     }
-    const urls = req.files.map((f) => `/uploads/documents/${f.filename}`);
+    const urls = req.files.map((f) => `${SERVER_URL}/uploads/documents/${f.filename}`);
     const worker = await Worker.findOneAndUpdate(
       { user: req.user._id },
       { $push: { portfolio: { $each: urls } } },

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createWorkerProfile } from '../../services/worker.service';
-import { uploadPortfolio } from '../../services/upload.service';
+import { uploadAvatar, uploadPortfolio } from '../../services/upload.service';
 import { useLanguage } from '../../context/LanguageContext';
 
 const SERVICES = ['Plumbing', 'Electrical', 'AC Repair'];
@@ -14,7 +14,11 @@ const WorkerSetup = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [done, setDone] = useState(false);
   const fileInputRef = useRef(null);
+  const avatarInputRef = useRef(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
 
   const TIME_SLOTS = [
     { label: t('workerSetup.morning'), slots: ['08:00', '09:00', '10:00', '11:00'] },
@@ -60,6 +64,13 @@ const WorkerSetup = () => {
     setPhotoPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
   const handleSubmit = async () => {
     setError('');
     setLoading(true);
@@ -72,10 +83,9 @@ const WorkerSetup = () => {
         location: { district: form.district, city: 'Tashkent' },
         availability: form.availability.filter((d) => d.slots.length > 0),
       });
-      if (photoFiles.length > 0) {
-        await uploadPortfolio(photoFiles);
-      }
-      navigate('/worker/dashboard');
+      if (avatarFile) await uploadAvatar(avatarFile);
+      if (photoFiles.length > 0) await uploadPortfolio(photoFiles);
+      setDone(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create profile');
     } finally {
@@ -97,6 +107,20 @@ const WorkerSetup = () => {
             {i < TOTAL_STEPS - 1 && <div className={`w-6 sm:w-12 h-1 mx-1 sm:mx-2 rounded ${i + 1 < step ? 'bg-[#1A56DB]' : 'bg-gray-200'}`} />}
           </div>
         ))}
+      </div>
+    </div>
+  );
+
+  if (done) return (
+    <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-md text-center">
+        <div className="text-6xl mb-4">🎉</div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Profile Created!</h2>
+        <p className="text-gray-500 text-sm mb-6">Your profile is pending admin approval. You will be notified once approved.</p>
+        <button onClick={() => navigate('/worker/dashboard')}
+          className="w-full bg-[#1A56DB] text-white py-3 rounded-xl font-semibold hover:bg-blue-700">
+          Go to Dashboard
+        </button>
       </div>
     </div>
   );
@@ -197,12 +221,30 @@ const WorkerSetup = () => {
           </div>
         )}
 
-        {/* Step 4: Portfolio Photos */}
+        {/* Step 4: Photos */}
         {step === 4 && (
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">{t('workerSetup.photos')}</h2>
             <p className="text-gray-500 text-sm mb-5">{t('workerSetup.photosHint')}</p>
 
+            {/* Profile Photo */}
+            <p className="text-sm font-medium text-gray-700 mb-2">Profile Photo</p>
+            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+            <div className="flex items-center gap-4 mb-6">
+              <div onClick={() => avatarInputRef.current.click()}
+                className="w-20 h-20 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-[#1A56DB] overflow-hidden flex-shrink-0">
+                {avatarPreview
+                  ? <img src={avatarPreview} className="w-full h-full object-cover" alt="avatar" />
+                  : <span className="text-3xl">👤</span>}
+              </div>
+              <button onClick={() => avatarInputRef.current.click()}
+                className="text-sm text-[#1A56DB] border border-[#1A56DB] px-4 py-2 rounded-lg hover:bg-blue-50">
+                {avatarPreview ? 'Change Photo' : 'Upload Photo'}
+              </button>
+            </div>
+
+            {/* Portfolio Photos */}
+            <p className="text-sm font-medium text-gray-700 mb-2">Portfolio Photos</p>
             <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
               onChange={handlePhotoChange} />
 
