@@ -99,9 +99,9 @@ const updateBookingStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
-    // Customer can only cancel pending bookings
+    // Customer can only cancel pending or confirmed bookings
     if (req.user.role === 'customer') {
-      if (status !== 'cancelled' || booking.status !== 'pending') {
+      if (status !== 'cancelled' || !['pending', 'confirmed'].includes(booking.status)) {
         return res.status(403).json({ success: false, message: 'Not authorized to update this booking' });
       }
     }
@@ -184,4 +184,39 @@ const getBookingById = async (req, res) => {
   }
 };
 
-module.exports = { createBooking, getCustomerBookings, getWorkerBookings, updateBookingStatus, getBookingById };
+// @desc    Reschedule a booking (customer only, pending/confirmed)
+// @route   PUT /api/bookings/:id/reschedule
+const rescheduleBooking = async (req, res) => {
+  try {
+    const { scheduledDate, scheduledTime } = req.body;
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+    if (booking.customer.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+    if (!['pending', 'confirmed'].includes(booking.status)) {
+      return res.status(400).json({ success: false, message: 'Cannot reschedule this booking' });
+    }
+    booking.scheduledDate = scheduledDate;
+    booking.scheduledTime = scheduledTime;
+    await booking.save();
+
+    // Notify worker via Socket.IO
+    try {
+      const io = req.app.get('io');
+      const userSockets = req.app.get('userSockets');
+      const workerDoc = await Worker.findById(booking.worker).select('user');
+      const workerUserId = workerDoc?.user?.toString();
+      if (io && userSockets && workerUserId) {
+        const socketId = userSockets.get(workerUserId);
+        if (socketId) io.to(socketId).emit('notification', { type: 'booking_rescheduled', booking });
+      }
+    } catch { /* silent */ }
+
+    res.json({ success: true, booking });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = { createBooking, getCustomerBookings, getWorkerBookings, updateBookingStatus, getBookingById, rescheduleBooking };

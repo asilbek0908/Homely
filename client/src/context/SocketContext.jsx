@@ -2,17 +2,32 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 
+const SOCKET_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace('/api', '')
+  : 'http://localhost:5000';
+
+const STORAGE_KEY = 'homely_notifications';
+
+const loadStored = () => {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+};
+
 const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState(loadStored);
+
+  const persist = (list) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 50)));
+  };
 
   useEffect(() => {
     if (!user?._id) return;
 
-    const s = io('http://localhost:5000', { withCredentials: true });
+    const s = io(SOCKET_URL, { withCredentials: true });
 
     s.on('connect', () => {
       s.emit('register', user._id);
@@ -20,7 +35,11 @@ export const SocketProvider = ({ children }) => {
     });
 
     s.on('notification', (data) => {
-      setNotifications((prev) => [{ ...data, id: Date.now(), read: false }, ...prev]);
+      setNotifications((prev) => {
+        const updated = [{ ...data, id: Date.now(), read: false, timestamp: new Date().toISOString() }, ...prev];
+        persist(updated);
+        return updated;
+      });
     });
 
     return () => {
@@ -29,18 +48,31 @@ export const SocketProvider = ({ children }) => {
     };
   }, [user?._id]);
 
-  const clearNotification = (id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  const markAllRead = () => {
+    setNotifications((prev) => {
+      const updated = prev.map((n) => ({ ...n, read: true }));
+      persist(updated);
+      return updated;
+    });
   };
 
-  const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const clearAll = () => {
+    setNotifications([]);
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
+  const dismissOne = (id) => {
+    setNotifications((prev) => {
+      const updated = prev.filter((n) => n.id !== id);
+      persist(updated);
+      return updated;
+    });
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <SocketContext.Provider value={{ socket, notifications, unreadCount, clearNotification, markAllRead }}>
+    <SocketContext.Provider value={{ socket, notifications, unreadCount, markAllRead, clearAll, dismissOne }}>
       {children}
     </SocketContext.Provider>
   );

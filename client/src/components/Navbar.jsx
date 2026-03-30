@@ -7,7 +7,7 @@ import { useSocket } from '../context/SocketContext';
 const Navbar = () => {
   const { user, logout } = useAuth();
   const { lang, setLang, t } = useLanguage();
-  const { unreadCount, notifications, markAllRead } = useSocket();
+  const { unreadCount, notifications, markAllRead, clearAll, dismissOne } = useSocket();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -33,6 +33,15 @@ const Navbar = () => {
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    const handler = (e) => {
+      if (!e.target.closest('[data-notif]')) setNotifOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [notifOpen]);
 
   const handleLogout = () => {
     logout();
@@ -91,7 +100,7 @@ const Navbar = () => {
 
             {/* Notification bell */}
             {user && (
-              <div className="relative">
+              <div className="relative" data-notif>
                 <button onClick={() => { setNotifOpen(!notifOpen); if (!notifOpen) markAllRead(); }}
                   className="relative p-2 text-gray-500 hover:text-[#1A56DB] rounded-lg hover:bg-gray-50">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,17 +113,41 @@ const Navbar = () => {
                   )}
                 </button>
                 {notifOpen && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 max-h-64 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <p className="text-center text-gray-400 text-sm py-4">{t('common.noNotifications') || 'No notifications'}</p>
-                    ) : (
-                      notifications.slice(0, 10).map((n) => (
-                        <div key={n.id} className={`px-4 py-2.5 text-sm border-b border-gray-50 ${n.read ? 'text-gray-500' : 'text-gray-900 bg-blue-50/50'}`}>
-                          {n.type === 'new_booking' && <p>📋 {t('workerDash.newRequests')}: {n.booking?.service}</p>}
-                          {n.type === 'booking_update' && <p>🔔 {t(`bookingCard.status.${n.status}`)}: {n.booking?.service}</p>}
-                        </div>
-                      ))
-                    )}
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 flex flex-col max-h-96">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                      <span className="text-sm font-semibold text-gray-900">🔔 Notifications</span>
+                      {notifications.length > 0 && (
+                        <button onClick={clearAll} className="text-xs text-gray-400 hover:text-red-500">Clear all</button>
+                      )}
+                    </div>
+                    <div className="overflow-y-auto flex-1">
+                      {notifications.length === 0 ? (
+                        <p className="text-center text-gray-400 text-sm py-8">No notifications</p>
+                      ) : (
+                        notifications.slice(0, 20).map((n) => (
+                          <div key={n.id} className={`flex items-start gap-2 px-4 py-3 border-b border-gray-50 hover:bg-gray-50 ${n.read ? '' : 'bg-blue-50/40'}`}>
+                            <span className="text-lg mt-0.5 flex-shrink-0">
+                              {n.type === 'new_booking' ? '📋' : n.type === 'booking_rescheduled' ? '🗓' : '🔔'}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-gray-800">
+                                {n.type === 'new_booking' && `New booking: ${n.booking?.service}`}
+                                {n.type === 'booking_update' && `Booking ${n.status}: ${n.booking?.service}`}
+                                {n.type === 'booking_rescheduled' && `Booking rescheduled: ${n.booking?.service}`}
+                              </p>
+                              {n.timestamp && (
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                  {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  {' · '}
+                                  {new Date(n.timestamp).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                            <button onClick={() => dismissOne(n.id)} className="text-gray-300 hover:text-gray-500 text-xs flex-shrink-0">✕</button>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

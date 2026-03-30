@@ -6,6 +6,8 @@ const {
   approveWorker,
   rejectWorker,
   getAllUsers,
+  deleteUser,
+  updateUserRole,
 } = require('../controllers/admin.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
 
@@ -14,5 +16,7 @@ router.get('/verifications', protect, authorize('admin'), getPendingVerification
 router.put('/workers/:id/approve', protect, authorize('admin'), approveWorker);
 router.put('/workers/:id/reject', protect, authorize('admin'), rejectWorker);
 router.get('/users', protect, authorize('admin'), getAllUsers);
+router.delete('/users/:id', protect, authorize('admin'), deleteUser);
+router.put('/users/:id/role', protect, authorize('admin'), updateUserRole);
 
 module.exports = router;

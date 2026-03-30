@@ -24,3 +24,8 @@ export const getBookingById = async (id) => {
   const res = await api.get(`/bookings/${id}`);
   return res.data;
 };
+
+export const rescheduleBooking = async (id, scheduledDate, scheduledTime) => {
+  const res = await api.put(`/bookings/${id}/reschedule`, { scheduledDate, scheduledTime });
+  return res.data;
+};

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { updateBookingStatus } from '../services/booking.service';
+import { updateBookingStatus, rescheduleBooking } from '../services/booking.service';
 import { createReview } from '../services/review.service';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -8,6 +8,13 @@ const formatUZS = (n) => new Intl.NumberFormat('uz-UZ').format(n) + ' UZS';
 const BookingCard = ({ booking, role, onStatusUpdate }) => {
   const { t } = useLanguage();
   const [showReview, setShowReview] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [rescheduling, setRescheduling] = useState(false);
+  const [rescheduled, setRescheduled] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -35,6 +42,34 @@ const BookingCard = ({ booking, role, onStatusUpdate }) => {
       onStatusUpdate?.();
     } catch (err) {
       alert(err.response?.data?.message || 'Error updating status');
+    }
+  };
+
+  const handleReschedule = async () => {
+    if (!newDate || !newTime) return;
+    setRescheduling(true);
+    try {
+      await rescheduleBooking(booking._id, newDate, newTime);
+      setRescheduled(true);
+      setShowReschedule(false);
+      onStatusUpdate?.();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error rescheduling booking');
+    } finally {
+      setRescheduling(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    setCancelling(true);
+    try {
+      await updateBookingStatus(booking._id, 'cancelled');
+      setShowCancelConfirm(false);
+      onStatusUpdate?.();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error cancelling booking');
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -115,9 +150,21 @@ const BookingCard = ({ booking, role, onStatusUpdate }) => {
               {t('bookingCard.complete')}
             </button>
           )}
-          {role === 'customer' && booking.status === 'pending' && (
-            <button onClick={() => handleStatus('cancelled')}
-              className="text-xs border border-red-400 text-red-600 px-3 py-1.5 rounded-lg">
+          {role === 'customer' && ['pending', 'confirmed'].includes(booking.status) && (
+            <>
+              <button onClick={() => { setShowReschedule((v) => !v); setShowCancelConfirm(false); }}
+                className="text-xs border border-gray-300 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50">
+                🗓 {t('bookingCard.reschedule')}
+              </button>
+              <button onClick={() => { setShowCancelConfirm(true); setShowReschedule(false); }}
+                className="text-xs border border-red-400 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50">
+                {t('bookingCard.cancel')}
+              </button>
+            </>
+          )}
+          {role === 'worker' && booking.status === 'confirmed' && (
+            <button onClick={() => setShowCancelConfirm(true)}
+              className="text-xs border border-red-400 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50">
               {t('bookingCard.cancel')}
             </button>
           )}
@@ -132,6 +179,43 @@ const BookingCard = ({ booking, role, onStatusUpdate }) => {
           )}
         </div>
       </div>
+
+      {showReschedule && (
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <p className="text-sm font-medium text-gray-800 mb-3">{t('bookingCard.rescheduleTitle')}</p>
+          <div className="flex gap-2 mb-3">
+            <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A56DB]" />
+            <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A56DB]" />
+          </div>
+          <button onClick={handleReschedule} disabled={!newDate || !newTime || rescheduling}
+            className="w-full bg-[#1A56DB] text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
+            {rescheduling && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+            {t('bookingCard.rescheduleSubmit')}
+          </button>
+        </div>
+      )}
+
+      {showCancelConfirm && (
+        <div className="mt-4 pt-4 border-t border-red-100 bg-red-50 rounded-xl p-4">
+          <p className="text-sm font-medium text-red-800 mb-3">
+            {t('bookingCard.cancelConfirm')}
+          </p>
+          <div className="flex gap-2">
+            <button onClick={handleCancel} disabled={cancelling}
+              className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2">
+              {cancelling && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+              {t('bookingCard.confirmYes')}
+            </button>
+            <button onClick={() => setShowCancelConfirm(false)}
+              className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50">
+              {t('bookingCard.confirmNo')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {showReview && (
         <div className="mt-4 pt-4 border-t border-gray-100">

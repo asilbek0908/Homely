@@ -9,18 +9,40 @@ const AdminDashboard = () => {
   const { t } = useLanguage();
   const [stats, setStats] = useState(null);
   const [verifications, setVerifications] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const fetchData = async () => {
     try {
-      const [statsRes, vRes] = await Promise.all([
+      const [statsRes, vRes, usersRes] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/admin/verifications'),
+        api.get('/admin/users'),
       ]);
       setStats(statsRes.data.stats);
       setVerifications(vRes.data.workers || []);
+      setUsers(usersRes.data.users || []);
     } catch (err) { console.error('Admin fetch error:', err); } finally { setLoading(false); }
+  };
+
+  const handleDeleteUser = async (id) => {
+    setDeletingId(id);
+    try {
+      await api.delete(`/admin/users/${id}`);
+      setUsers((prev) => prev.filter((u) => u._id !== id));
+      setConfirmDeleteId(null);
+    } catch (err) { alert(err.response?.data?.message || 'Error deleting user'); }
+    finally { setDeletingId(null); }
+  };
+
+  const handleRoleChange = async (id, role) => {
+    try {
+      const res = await api.put(`/admin/users/${id}/role`, { role });
+      setUsers((prev) => prev.map((u) => u._id === id ? { ...u, role: res.data.user.role } : u));
+    } catch (err) { alert(err.response?.data?.message || 'Error updating role'); }
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -49,6 +71,7 @@ const AdminDashboard = () => {
             { id: 'analytics', label: t('adminDash.analytics'), icon: '📈' },
             { id: 'verifications', label: t('adminDash.verifications'), icon: '✅' },
             { id: 'bookings', label: t('adminDash.bookings'), icon: '📋' },
+            { id: 'users', label: 'User Management', icon: '👥' },
           ].map((item) => (
             <button key={item.id} onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg ${activeTab === item.id ? 'bg-blue-50 text-[#1A56DB] font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>
@@ -240,6 +263,82 @@ const AdminDashboard = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </section>
+        )}
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <section>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">User Management
+              <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{users.length} users</span>
+            </h2>
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              {users.length === 0 ? (
+                <div className="p-8 text-center text-gray-400">
+                  <div className="text-3xl mb-2">👥</div>
+                  <p className="text-sm">No users found.</p>
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="text-left px-5 py-3 text-gray-600 font-medium">User</th>
+                      <th className="text-left px-5 py-3 text-gray-600 font-medium">Phone</th>
+                      <th className="text-left px-5 py-3 text-gray-600 font-medium">Role</th>
+                      <th className="text-left px-5 py-3 text-gray-600 font-medium">Joined</th>
+                      <th className="text-left px-5 py-3 text-gray-600 font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u) => (
+                      <tr key={u._id} className="border-b hover:bg-gray-50">
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-[#1A56DB] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                              {u.name?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">{u.name}</p>
+                              <p className="text-gray-400 text-xs">{u.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-gray-600">{u.phone || '—'}</td>
+                        <td className="px-5 py-3">
+                          <select value={u.role}
+                            onChange={(e) => handleRoleChange(u._id, e.target.value)}
+                            className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#1A56DB]">
+                            <option value="customer">Customer</option>
+                            <option value="worker">Worker</option>
+                          </select>
+                        </td>
+                        <td className="px-5 py-3 text-gray-500">
+                          {new Date(u.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-5 py-3">
+                          {confirmDeleteId === u._id ? (
+                            <div className="flex gap-1">
+                              <button onClick={() => handleDeleteUser(u._id)} disabled={deletingId === u._id}
+                                className="text-xs bg-red-600 text-white px-2 py-1 rounded-lg hover:bg-red-700 disabled:opacity-50">
+                                {deletingId === u._id ? '...' : 'Yes'}
+                              </button>
+                              <button onClick={() => setConfirmDeleteId(null)}
+                                className="text-xs border border-gray-300 text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-50">
+                                No
+                              </button>
+                            </div>
+                          ) : (
+                            <button onClick={() => setConfirmDeleteId(u._id)}
+                              className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100">
+                              🗑 Delete
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </section>
         )}
