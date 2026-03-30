@@ -11,8 +11,9 @@ const {
 // @route   POST /api/bookings
 const createBooking = async (req, res) => {
   try {
-    const { worker, service, description, scheduledDate, scheduledTime, address, district, price } = req.body;
-    const commission = price ? price * 0.1 : 0;
+    const { worker, service, description, scheduledDate, scheduledTime, address, district, price, paymentMethod } = req.body;
+    const method = paymentMethod || 'cash';
+    const commission = method === 'cash' ? 0 : (price ? price * 0.1 : 0);
 
     const booking = await Booking.create({
       customer: req.user._id,
@@ -24,6 +25,7 @@ const createBooking = async (req, res) => {
       address,
       district,
       price: price || 0,
+      paymentMethod: method,
       commission,
     });
 
