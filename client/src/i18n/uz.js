@@ -285,6 +285,12 @@ export default {
     myJobs: 'Ishlarim',
     earningsTab: 'Daromad',
     editProfile: 'Tahrirlash',
+    verificationStatus: 'Tekshirish holati',
+    statusPending: 'Ko\'rib chiqilmoqda',
+    statusApproved: 'Tasdiqlangan',
+    statusRejected: 'Rad etilgan',
+    pendingNote: 'Profilingiz ko\'rib chiqilmoqda. Tasdiqlangach xabar beramiz.',
+    rejectedNote: 'Profilingiz rad etildi. Hujjatlaringizni yangilang va qo\'llab-quvvatlash bilan bog\'laning.',
   },
 
   workerSetup: {

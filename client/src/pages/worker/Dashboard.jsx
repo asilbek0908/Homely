@@ -24,6 +24,7 @@ const WorkerDashboard = () => {
   const [portfolioImages, setPortfolioImages] = useState([]);
   const [docDeleting, setDocDeleting] = useState(false);
   const [deletingPhoto, setDeletingPhoto] = useState(null);
+  const [verificationStatus, setVerificationStatus] = useState('pending');
   const avatarInputRef = useRef(null);
   const docInputRef = useRef(null);
   const portfolioInputRef = useRef(null);
@@ -39,6 +40,7 @@ const WorkerDashboard = () => {
       setStats(statsData.stats || {});
       setCurrentDoc(profileData.worker?.idDocument || '');
       setPortfolioImages(profileData.worker?.portfolio || []);
+      setVerificationStatus(profileData.worker?.verificationStatus || 'pending');
     } catch (err) { console.error('Worker fetch error:', err); } finally { setLoading(false); }
   };
 
@@ -195,8 +197,35 @@ const WorkerDashboard = () => {
               <p className="text-gray-500 text-sm mt-1">{t('workerDash.subtitle')}</p>
             </div>
           </div>
-          <span className="text-xs font-medium bg-green-100 text-green-700 px-3 py-1.5 rounded-full">✓ {t('workerDash.active')}</span>
+          {verificationStatus === 'approved' && (
+            <span className="text-xs font-medium bg-green-100 text-green-700 px-3 py-1.5 rounded-full">✓ {t('workerDash.statusApproved')}</span>
+          )}
+          {verificationStatus === 'pending' && (
+            <span className="text-xs font-medium bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-full">⏳ {t('workerDash.statusPending')}</span>
+          )}
+          {verificationStatus === 'rejected' && (
+            <span className="text-xs font-medium bg-red-100 text-red-700 px-3 py-1.5 rounded-full">✕ {t('workerDash.statusRejected')}</span>
+          )}
         </div>
+
+        {verificationStatus === 'pending' && (
+          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl px-5 py-4 flex items-start gap-3">
+            <span className="text-xl">⏳</span>
+            <div>
+              <p className="font-semibold text-yellow-800 text-sm">{t('workerDash.verificationStatus')}: {t('workerDash.statusPending')}</p>
+              <p className="text-yellow-700 text-xs mt-0.5">{t('workerDash.pendingNote')}</p>
+            </div>
+          </div>
+        )}
+        {verificationStatus === 'rejected' && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-start gap-3">
+            <span className="text-xl">❌</span>
+            <div>
+              <p className="font-semibold text-red-800 text-sm">{t('workerDash.verificationStatus')}: {t('workerDash.statusRejected')}</p>
+              <p className="text-red-700 text-xs mt-0.5">{t('workerDash.rejectedNote')}</p>
+            </div>
+          </div>
+        )}
 
         {activeTab === 'documents' ? (
           <div className="space-y-6">

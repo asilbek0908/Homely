@@ -285,6 +285,12 @@ export default {
     myJobs: 'Мои заказы',
     earningsTab: 'Заработок',
     editProfile: 'Редактировать',
+    verificationStatus: 'Статус верификации',
+    statusPending: 'На проверке',
+    statusApproved: 'Подтверждён',
+    statusRejected: 'Отклонён',
+    pendingNote: 'Ваш профиль проверяется. Вы получите уведомление после одобрения.',
+    rejectedNote: 'Ваш профиль отклонён. Обновите документы и свяжитесь с поддержкой.',
   },
 
   workerSetup: {

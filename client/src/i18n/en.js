@@ -300,6 +300,12 @@ export default {
     myJobs: 'My Jobs',
     earningsTab: 'Earnings',
     editProfile: 'Edit Profile',
+    verificationStatus: 'Verification Status',
+    statusPending: 'Pending Review',
+    statusApproved: 'Verified',
+    statusRejected: 'Rejected',
+    pendingNote: 'Your profile is under review. You will be notified once approved.',
+    rejectedNote: 'Your profile was rejected. Please update your documents and contact support.',
   },
 
   // Worker setup
