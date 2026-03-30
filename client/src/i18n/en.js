@@ -427,6 +427,48 @@ export default {
     photosUploaded: '{count} photos uploaded',
   },
 
+  // Payment page
+  payment: {
+    title: 'Confirm Your Booking',
+    summary: 'Booking Summary',
+    serviceFee: 'Service Fee',
+    platformFee: 'Platform Fee',
+    freeLaunch: 'FREE during launch',
+    total: 'Total',
+    paymentMethod: 'Payment Method',
+    cash: 'Cash on Delivery',
+    cashDesc: 'Pay the worker directly after job completion',
+    mostPopular: 'Most Popular in Uzbekistan',
+    comingSoon: 'Coming Soon',
+    secureBooking: 'Secure Booking',
+    payAfter: 'Pay After Completion',
+    moneyBack: 'Money Back Guarantee',
+    confirm: 'Confirm Booking',
+    confirming: 'Confirming...',
+  },
+
+  // Subscription page
+  subscription: {
+    title: 'Worker Subscription Plans',
+    subtitle: 'Grow your business with Homely',
+    free: 'Free',
+    pro: 'Pro',
+    premium: 'Premium',
+    currentPlan: 'Current Plan',
+    upgradePro: 'Upgrade to Pro',
+    upgradePremium: 'Upgrade to Premium',
+    mostPopular: 'Most Popular',
+    forever: 'forever',
+    perMonth: '/ month',
+    comingSoonTitle: 'Coming Soon!',
+    comingSoonMsg: 'Online payments are launching soon. We will notify you when subscriptions are available. Thank you for your interest in growing with Homely!',
+    close: 'Close',
+    currentPlanLabel: 'Current Plan',
+    jobsThisMonth: 'Jobs this month',
+    upgradePlan: 'Upgrade Plan',
+    of: 'of',
+  },
+
   // Days of the week
   days: {
     Monday: 'Monday',

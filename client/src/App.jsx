@@ -23,7 +23,9 @@ import ResetPassword from './pages/ResetPassword';
 import CustomerDashboard from './pages/customer/Dashboard';
 import WorkerDashboard from './pages/worker/Dashboard';
 import WorkerSetup from './pages/worker/WorkerSetup';
+import SubscriptionPage from './pages/worker/SubscriptionPage';
 import AdminDashboard from './pages/admin/Dashboard';
+import PaymentPage from './pages/PaymentPage';
 
 // Pages without Navbar/Footer
 const FULL_PAGES = ['/login', '/register', '/worker/setup', '/verify-email', '/forgot-password', '/reset-password'];
@@ -79,6 +81,9 @@ function App() {
           <Route path="/customer/dashboard" element={
             <ProtectedRoute role="customer"><CustomerDashboard /></ProtectedRoute>
           } />
+          <Route path="/payment" element={
+            <ProtectedRoute role="customer"><PaymentPage /></ProtectedRoute>
+          } />
 
           {/* Worker */}
           <Route path="/worker/dashboard" element={
@@ -86,6 +91,9 @@ function App() {
           } />
           <Route path="/worker/setup" element={
             <ProtectedRoute role="worker"><WorkerSetup /></ProtectedRoute>
+          } />
+          <Route path="/worker/subscription" element={
+            <ProtectedRoute role="worker"><SubscriptionPage /></ProtectedRoute>
           } />
 
           {/* Admin */}

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getWorkerById } from "../services/worker.service";
-import { createBooking } from "../services/booking.service";
 import { getWorkerReviews, createReview } from "../services/review.service";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -31,8 +30,6 @@ const WorkerProfile = () => {
   const [lightboxImg, setLightboxImg] = useState(null);
 
   const [booking, setBooking] = useState({ service: "", date: "", time: "", address: "", district: "", description: "" });
-  const [bookingLoading, setBookingLoading] = useState(false);
-  const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingError, setBookingError] = useState("");
 
   const [reviews, setReviews] = useState([]);
@@ -84,27 +81,28 @@ const WorkerProfile = () => {
     }
   };
 
-  const handleBook = async () => {
+  const handleBook = () => {
     if (!user) { navigate("/register"); return; }
     if (!booking.service || !booking.date || !booking.time || !booking.address) {
       setBookingError(t('workerProfile.fillAllFields'));
       return;
     }
     setBookingError("");
-    setBookingLoading(true);
-    try {
-      await createBooking({
-        worker: worker._id, service: booking.service, description: booking.description,
-        scheduledDate: booking.date, scheduledTime: booking.time, address: booking.address,
-        district: booking.district || worker.location?.district || "Tashkent", price: worker.jobRate,
-      });
-      setBookingSuccess(true);
-      setTimeout(() => navigate("/booking/confirm"), 1500);
-    } catch (err) {
-      setBookingError(err.response?.data?.message || "Booking failed");
-    } finally {
-      setBookingLoading(false);
-    }
+    navigate("/payment", {
+      state: {
+        worker,
+        bookingData: {
+          worker: worker._id,
+          service: booking.service,
+          description: booking.description,
+          scheduledDate: booking.date,
+          scheduledTime: booking.time,
+          address: booking.address,
+          district: booking.district || worker.location?.district || "Tashkent",
+          price: worker.jobRate,
+        },
+      },
+    });
   };
 
   if (loading) return (
@@ -332,12 +330,6 @@ const WorkerProfile = () => {
                   Register / Login
                 </button>
               </div>
-            ) : bookingSuccess ? (
-              <div className="text-center py-6">
-                <div className="text-5xl mb-3">✅</div>
-                <p className="font-semibold text-green-600">{t('workerProfile.bookingConfirmed')}</p>
-                <p className="text-sm text-gray-500 mt-1">{t('workerProfile.redirecting')}</p>
-              </div>
             ) : (
               <div className="space-y-3">
                 <div>
@@ -391,10 +383,9 @@ const WorkerProfile = () => {
 
                 {bookingError && <p className="text-red-500 text-xs">{bookingError}</p>}
 
-                <button onClick={handleBook} disabled={bookingLoading}
-                  className="w-full bg-[#F97316] text-white py-3 rounded-xl font-semibold hover:bg-orange-600 disabled:opacity-60 flex items-center justify-center gap-2">
-                  {bookingLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                  {bookingLoading ? t('workerProfile.booking') : t('workerProfile.requestBookingBtn')}
+                <button onClick={handleBook}
+                  className="w-full bg-[#F97316] text-white py-3 rounded-xl font-semibold hover:bg-orange-600">
+                  {t('workerProfile.requestBookingBtn')}
                 </button>
               </div>
             )}

@@ -159,6 +159,9 @@ const WorkerDashboard = () => {
           <Link to="/worker/setup" className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 rounded-lg hover:bg-gray-50">
             👤 {t('workerDash.editProfile')}
           </Link>
+          <Link to="/worker/subscription" className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 rounded-lg hover:bg-gray-50">
+            ⭐ {t('subscription.upgradePlan')}
+          </Link>
         </nav>
 
         <div className="mx-3 mt-3">
@@ -336,6 +339,21 @@ const WorkerDashboard = () => {
               <p className="text-gray-600 text-xs mt-1">{s.label}</p>
             </div>
           ))}
+        </div>
+
+        {/* Subscription status card */}
+        <div className="bg-gradient-to-r from-[#1A56DB] to-blue-700 rounded-xl p-5 mb-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white text-xl">⭐</div>
+            <div>
+              <p className="text-white font-semibold">{t('subscription.currentPlanLabel')}: <span className="text-yellow-300">{t('subscription.free')}</span></p>
+              <p className="text-blue-100 text-xs mt-0.5">{t('subscription.jobsThisMonth')}: {stats?.completedBookings || 0} {t('subscription.of')} 3</p>
+            </div>
+          </div>
+          <Link to="/worker/subscription"
+            className="flex-shrink-0 bg-white text-[#1A56DB] text-sm font-semibold px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors">
+            {t('subscription.upgradePlan')} →
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

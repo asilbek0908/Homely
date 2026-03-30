@@ -69,6 +69,7 @@ const AdminDashboard = () => {
           {[
             { id: 'dashboard', label: t('common.dashboard'), icon: '📊' },
             { id: 'analytics', label: t('adminDash.analytics'), icon: '📈' },
+            { id: 'revenue', label: 'Revenue', icon: '💰' },
             { id: 'verifications', label: t('adminDash.verifications'), icon: '✅' },
             { id: 'bookings', label: t('adminDash.bookings'), icon: '📋' },
             { id: 'users', label: 'User Management', icon: '👥' },
@@ -165,6 +166,90 @@ const AdminDashboard = () => {
                     <span className="font-semibold text-gray-900">{monthlyData.reduce((s, m) => s + m.count, 0)} total bookings</span>
                   </div>
                 )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Revenue Tab */}
+        {activeTab === 'revenue' && stats && (() => {
+          const totalWorkers = stats.totalWorkers || 0;
+          const totalBookings = stats.totalBookings || 0;
+          const projectedPro = Math.round(totalWorkers * 0.3 * 99000);
+          const projectedPremium = Math.round(totalWorkers * 0.1 * 199000);
+          const projectedSubscription = projectedPro + projectedPremium;
+          const avgBookingValue = 150000;
+          const projectedCommission = Math.round(totalBookings * avgBookingValue * 0.1);
+
+          return (
+            <div className="space-y-6">
+              {/* Current Status */}
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-1">Current Status</h3>
+                <p className="text-sm text-gray-500 mb-5">Platform monetization overview as of today</p>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Registered Workers', value: totalWorkers, icon: '👷', color: 'text-[#1A56DB]', bg: 'bg-blue-50' },
+                    { label: 'Total Bookings', value: totalBookings, icon: '📋', color: 'text-green-600', bg: 'bg-green-50' },
+                    { label: 'Cash Bookings', value: totalBookings, icon: '💵', color: 'text-orange-600', bg: 'bg-orange-50' },
+                    { label: 'Platform Revenue', value: formatUZS(0), icon: '💰', color: 'text-purple-600', bg: 'bg-purple-50' },
+                  ].map((s) => (
+                    <div key={s.label} className={`${s.bg} rounded-xl p-4`}>
+                      <div className="text-2xl mb-2">{s.icon}</div>
+                      <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
+                      <p className="text-gray-600 text-xs mt-1">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 text-sm text-yellow-800">
+                  🚀 Platform is in <strong>free launch phase</strong>. Subscriptions and online payment commissions launching soon.
+                </div>
+              </div>
+
+              {/* Projected Subscription Revenue */}
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-1">Projected Subscription Revenue</h3>
+                <p className="text-sm text-gray-500 mb-5">Based on {totalWorkers} registered workers when subscriptions launch</p>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <p className="text-xs text-gray-500 mb-1">Pro subscribers (30%)</p>
+                    <p className="text-lg font-bold text-[#1A56DB]">{Math.round(totalWorkers * 0.3)} workers</p>
+                    <p className="text-sm text-gray-700 mt-1">× 99,000 UZS = <strong>{formatUZS(projectedPro)}</strong></p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <p className="text-xs text-gray-500 mb-1">Premium subscribers (10%)</p>
+                    <p className="text-lg font-bold text-[#F97316]">{Math.round(totalWorkers * 0.1)} workers</p>
+                    <p className="text-sm text-gray-700 mt-1">× 199,000 UZS = <strong>{formatUZS(projectedPremium)}</strong></p>
+                  </div>
+                  <div className="bg-blue-50 rounded-xl p-4 border border-[#1A56DB]">
+                    <p className="text-xs text-[#1A56DB] font-medium mb-1">Projected Monthly Total</p>
+                    <p className="text-2xl font-bold text-[#1A56DB]">{formatUZS(projectedSubscription)}</p>
+                    <p className="text-xs text-gray-500 mt-1">per month from subscriptions</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Projected Commission Revenue */}
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-1">Projected Commission Revenue</h3>
+                <p className="text-sm text-gray-500 mb-5">Based on 10% commission when online payments launch</p>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <p className="text-xs text-gray-500 mb-1">Total bookings</p>
+                    <p className="text-lg font-bold text-gray-900">{totalBookings}</p>
+                    <p className="text-xs text-gray-500 mt-1">transactions to date</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <p className="text-xs text-gray-500 mb-1">Avg booking value</p>
+                    <p className="text-lg font-bold text-gray-900">150,000 UZS</p>
+                    <p className="text-xs text-gray-500 mt-1">10% commission per transaction</p>
+                  </div>
+                  <div className="bg-orange-50 rounded-xl p-4 border border-[#F97316]">
+                    <p className="text-xs text-[#F97316] font-medium mb-1">Projected Commission Total</p>
+                    <p className="text-2xl font-bold text-[#F97316]">{formatUZS(projectedCommission)}</p>
+                    <p className="text-xs text-gray-500 mt-1">from existing bookings at 10%</p>
+                  </div>
+                </div>
               </div>
             </div>
           );

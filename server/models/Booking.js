@@ -15,6 +15,11 @@ const bookingSchema = new mongoose.Schema({
     default: 'pending',
   },
   price: { type: Number, default: 0 },
+  paymentMethod: {
+    type: String,
+    enum: ['cash', 'click', 'payme'],
+    default: 'cash',
+  },
   commission: { type: Number, default: 0 },
   paymentStatus: {
     type: String,
