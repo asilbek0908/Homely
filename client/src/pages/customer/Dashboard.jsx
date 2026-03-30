@@ -4,7 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { getCustomerBookings } from '../../services/booking.service';
 import { uploadAvatar } from '../../services/upload.service';
-import { updateProfile, getSavedWorkers, toggleSavedWorker } from '../../services/auth.service';
+import { updateProfile, getSavedWorkers } from '../../services/auth.service';
+import { getAIMatches } from '../../services/ai.service';
 import BookingCard from '../../components/BookingCard';
 import WorkerCard from '../../components/WorkerCard';
 
@@ -22,6 +23,8 @@ const CustomerDashboard = () => {
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMsg, setProfileMsg] = useState('');
   const [savedWorkers, setSavedWorkers] = useState([]);
+  const [aiMatches, setAiMatches] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -53,6 +56,17 @@ const CustomerDashboard = () => {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const service = 'Plumbing';
+    const district = user.location?.district || '';
+    setAiLoading(true);
+    getAIMatches(service, district)
+      .then((data) => setAiMatches(data.matches || []))
+      .catch(() => setAiMatches([]))
+      .finally(() => setAiLoading(false));
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -265,6 +279,99 @@ const CustomerDashboard = () => {
                   {activeBookings.slice(0, 4).map((b) => <BookingCard key={b._id} booking={b} role="customer" onStatusUpdate={fetchData} />)}
                 </div>
               )}
+            </section>
+
+            {/* AI Recommendations */}
+            <section className="mt-8">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">🤖 AI Recommendations</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">Top workers matched for you by Homely AI</p>
+                </div>
+                <Link to="/workers" className="text-sm text-[#1A56DB] hover:underline">Browse all</Link>
+              </div>
+
+              {aiLoading ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-white rounded-xl p-5 animate-pulse">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-full bg-gray-200" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-3/4" />
+                          <div className="h-3 bg-gray-200 rounded w-1/2" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="h-3 bg-gray-200 rounded" />
+                        <div className="h-3 bg-gray-200 rounded w-5/6" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : aiMatches.length === 0 ? (
+                <div className="bg-white rounded-xl p-8 text-center text-gray-400">
+                  <div className="text-4xl mb-2">🤖</div>
+                  <p className="text-sm">No matches yet. <Link to="/workers" className="text-[#1A56DB] hover:underline">Browse workers</Link></p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {aiMatches.map((w) => (
+                    <div key={w._id} className="bg-white rounded-xl shadow-md p-5 border border-gray-100 flex flex-col gap-3">
+                      {/* Match badge + header */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={w.user?.avatar?.startsWith('http') ? w.user.avatar : `http://localhost:5000${w.user?.avatar || ''}`}
+                            onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(w.user?.name || 'W')}&background=1A56DB&color=fff`; }}
+                            alt={w.user?.name} className="w-12 h-12 rounded-full object-cover" />
+                          <div>
+                            <p className="font-semibold text-gray-900 text-sm">{w.user?.name}</p>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="text-yellow-400 text-xs">★</span>
+                              <span className="text-xs text-gray-600">{w.rating?.toFixed(1)} ({w.totalReviews} reviews)</span>
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-xs font-bold bg-[#F97316] text-white px-2 py-1 rounded-full flex-shrink-0">
+                          {w.score}% match
+                        </span>
+                      </div>
+
+                      {/* Details */}
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>📍 {w.location?.district || 'Tashkent'}</span>
+                        <span className="font-semibold text-gray-800">{formatUZS(w.jobRate)}/job</span>
+                      </div>
+
+                      {/* Why recommended */}
+                      <div className="bg-blue-50 rounded-lg px-3 py-2">
+                        <p className="text-xs font-semibold text-[#1A56DB] mb-1">Why recommended</p>
+                        <ul className="space-y-0.5">
+                          {w.matchReasons?.slice(0, 3).map((r, i) => (
+                            <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
+                              <span className="text-green-500 flex-shrink-0">✓</span> {r}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Buttons */}
+                      <div className="flex gap-2 mt-auto">
+                        <Link to={`/workers/${w._id}`}
+                          className="flex-1 text-center text-xs font-medium border border-[#1A56DB] text-[#1A56DB] px-3 py-2 rounded-lg hover:bg-blue-50">
+                          View Profile
+                        </Link>
+                        <Link to={`/workers/${w._id}`}
+                          className="flex-1 text-center text-xs font-medium bg-[#F97316] text-white px-3 py-2 rounded-lg hover:bg-orange-600">
+                          Book Now
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-gray-400 text-center mt-3">⚡ Powered by Homely AI</p>
             </section>
           </>
         )}
