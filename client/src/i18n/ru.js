@@ -230,6 +230,10 @@ export default {
     startJob: 'Начать',
     complete: 'Завершить',
     cancel: 'Отменить',
+    leaveReview: 'Оставить отзыв',
+    submitReview: 'Отправить',
+    reviewPlaceholder: 'Поделитесь впечатлением...',
+    reviewSuccess: 'Отзыв отправлен!',
     status: {
       pending: 'Ожидает',
       confirmed: 'Подтверждён',

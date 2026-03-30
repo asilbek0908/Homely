@@ -243,6 +243,10 @@ export default {
     startJob: 'Start Job',
     complete: 'Complete',
     cancel: 'Cancel',
+    leaveReview: 'Leave Review',
+    submitReview: 'Submit Review',
+    reviewPlaceholder: 'Share your experience...',
+    reviewSuccess: 'Review submitted!',
     status: {
       pending: 'Pending',
       confirmed: 'Confirmed',

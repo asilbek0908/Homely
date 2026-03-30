@@ -1,10 +1,18 @@
+import { useState } from 'react';
 import { updateBookingStatus } from '../services/booking.service';
+import { createReview } from '../services/review.service';
 import { useLanguage } from '../context/LanguageContext';
 
 const formatUZS = (n) => new Intl.NumberFormat('uz-UZ').format(n) + ' UZS';
 
 const BookingCard = ({ booking, role, onStatusUpdate }) => {
   const { t } = useLanguage();
+  const [showReview, setShowReview] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewDone, setReviewDone] = useState(false);
 
   const statusConfig = {
     pending:    { label: t('bookingCard.status.pending'),    classes: 'bg-yellow-100 text-yellow-700' },
@@ -27,6 +35,20 @@ const BookingCard = ({ booking, role, onStatusUpdate }) => {
       onStatusUpdate?.();
     } catch (err) {
       alert(err.response?.data?.message || 'Error updating status');
+    }
+  };
+
+  const handleReviewSubmit = async () => {
+    if (!rating) return;
+    setReviewLoading(true);
+    try {
+      await createReview({ bookingId: booking._id, rating, comment });
+      setReviewDone(true);
+      setShowReview(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to submit review');
+    } finally {
+      setReviewLoading(false);
     }
   };
 
@@ -99,8 +121,45 @@ const BookingCard = ({ booking, role, onStatusUpdate }) => {
               {t('bookingCard.cancel')}
             </button>
           )}
+          {role === 'customer' && booking.status === 'completed' && !reviewDone && (
+            <button onClick={() => setShowReview((v) => !v)}
+              className="text-xs bg-yellow-400 text-white px-3 py-1.5 rounded-lg hover:bg-yellow-500">
+              ⭐ {t('bookingCard.leaveReview')}
+            </button>
+          )}
+          {reviewDone && (
+            <span className="text-xs text-green-600 font-medium">{t('bookingCard.reviewSuccess')}</span>
+          )}
         </div>
       </div>
+
+      {showReview && (
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="flex gap-1 mb-3">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button key={star}
+                onMouseEnter={() => setHoverRating(star)}
+                onMouseLeave={() => setHoverRating(0)}
+                onClick={() => setRating(star)}
+                className="text-2xl transition-transform hover:scale-110">
+                {star <= (hoverRating || rating) ? '⭐' : '☆'}
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder={t('bookingCard.reviewPlaceholder')}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A56DB] resize-none mb-3"
+          />
+          <button onClick={handleReviewSubmit} disabled={!rating || reviewLoading}
+            className="w-full bg-[#1A56DB] text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
+            {reviewLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+            {t('bookingCard.submitReview')}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

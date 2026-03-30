@@ -230,6 +230,10 @@ export default {
     startJob: 'Boshlash',
     complete: 'Tugatish',
     cancel: 'Bekor qilish',
+    leaveReview: 'Sharh qoldirish',
+    submitReview: 'Yuborish',
+    reviewPlaceholder: 'Tajribangizni baham ko\'ring...',
+    reviewSuccess: 'Sharh yuborildi!',
     status: {
       pending: 'Kutilmoqda',
       confirmed: 'Tasdiqlandi',
