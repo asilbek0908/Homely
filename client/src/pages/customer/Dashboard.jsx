@@ -150,12 +150,12 @@ const CustomerDashboard = () => {
         </div>
       </aside>
 
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 pb-24 lg:pb-6">
         <div className="flex items-center gap-4 mb-6">
           <div className="relative group">
             <button onClick={() => avatarInputRef.current?.click()} className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-gray-200 hover:border-[#1A56DB] transition-colors">
               {user?.avatar ? (
-                <img src={user.avatar.startsWith('http') ? user.avatar : `http://localhost:5000${user.avatar}`} alt="" className="w-full h-full object-cover" />
+                <img src={user.avatar} alt="" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-[#1A56DB] flex items-center justify-center text-white text-xl font-bold">
                   {user?.name?.[0]?.toUpperCase()}
@@ -322,7 +322,7 @@ const CustomerDashboard = () => {
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
                           <img
-                            src={w.user?.avatar?.startsWith('http') ? w.user.avatar : `http://localhost:5000${w.user?.avatar || ''}`}
+                            src={w.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(w.user?.name || 'W')}&background=1A56DB&color=fff`}
                             onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(w.user?.name || 'W')}&background=1A56DB&color=fff`; }}
                             alt={w.user?.name} className="w-12 h-12 rounded-full object-cover" />
                           <div>
@@ -376,6 +376,29 @@ const CustomerDashboard = () => {
           </>
         )}
       </main>
+
+      {/* Mobile bottom navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex items-center justify-around px-2 py-2 shadow-lg">
+        {[
+          { id: 'dashboard', icon: '🏠', label: t('common.dashboard') },
+          { id: 'bookings', icon: '📋', label: t('customerDash.myBookings') },
+          { id: 'saved', icon: '❤️', label: t('customerDash.savedTab') },
+          { id: 'profile', icon: '👤', label: t('customerDash.profile') },
+        ].map((item) => (
+          <button key={item.id} onClick={() => setActiveTab(item.id)}
+            className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors ${activeTab === item.id ? 'text-[#1A56DB]' : 'text-gray-400'}`}>
+            <span className="text-xl">{item.icon}</span>
+            <span className="text-[10px] font-medium">{item.label}</span>
+          </button>
+        ))}
+        <Link to="/workers" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-gray-400">
+          <span className="text-xl">🔍</span>
+          <span className="text-[10px] font-medium">{t('customerDash.findWorkers')}</span>
+        </Link>
+      </nav>
+
+      {/* Bottom padding on mobile so content isn't hidden behind nav */}
+      <div className="lg:hidden h-20" />
     </div>
   );
 };

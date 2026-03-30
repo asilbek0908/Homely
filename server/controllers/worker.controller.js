@@ -32,7 +32,17 @@ const getWorkerById = async (req, res) => {
     if (!worker) {
       return res.status(404).json({ success: false, message: 'Worker not found' });
     }
-    res.json({ success: true, worker });
+
+    // Calculate avg response time
+    const bookings = await Booking.find({ worker: worker._id });
+    const respondedBookings = bookings.filter((b) => ['confirmed', 'inProgress', 'completed'].includes(b.status));
+    let avgResponseHours = null;
+    if (respondedBookings.length > 0) {
+      const totalMs = respondedBookings.reduce((sum, b) => sum + (new Date(b.updatedAt) - new Date(b.createdAt)), 0);
+      avgResponseHours = Math.round(totalMs / respondedBookings.length / (1000 * 60 * 60));
+    }
+
+    res.json({ success: true, worker, avgResponseHours });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -87,6 +97,14 @@ const getWorkerStats = async (req, res) => {
     const pendingBookings = bookings.filter((b) => b.status === 'pending');
     const totalEarnings = completedBookings.reduce((sum, b) => sum + b.price, 0);
 
+    // Avg response time: hours between booking created → confirmed/accepted
+    const respondedBookings = bookings.filter((b) => ['confirmed', 'inProgress', 'completed'].includes(b.status));
+    let avgResponseHours = null;
+    if (respondedBookings.length > 0) {
+      const totalMs = respondedBookings.reduce((sum, b) => sum + (new Date(b.updatedAt) - new Date(b.createdAt)), 0);
+      avgResponseHours = Math.round(totalMs / respondedBookings.length / (1000 * 60 * 60));
+    }
+
     res.json({
       success: true,
       stats: {
@@ -96,6 +114,7 @@ const getWorkerStats = async (req, res) => {
         totalReviews: worker.totalReviews,
         pendingBookings: pendingBookings.length,
         completedBookings: completedBookings.length,
+        avgResponseHours,
       },
     });
   } catch (err) {

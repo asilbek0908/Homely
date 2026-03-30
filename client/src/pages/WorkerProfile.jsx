@@ -26,6 +26,7 @@ const WorkerProfile = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [worker, setWorker] = useState(null);
+  const [avgResponseHours, setAvgResponseHours] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lightboxImg, setLightboxImg] = useState(null);
 
@@ -55,6 +56,7 @@ const WorkerProfile = () => {
       try {
         const data = await getWorkerById(id);
         setWorker(data.worker);
+        setAvgResponseHours(data.avgResponseHours ?? null);
         if (data.worker.services?.[0]) setBooking((b) => ({ ...b, service: data.worker.services[0] }));
         fetchReviews(data.worker._id);
       } catch { /* silent */ } finally {
@@ -158,7 +160,7 @@ const WorkerProfile = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 bg-gray-50 rounded-xl p-4 mb-5">
+            <div className="grid grid-cols-4 gap-3 bg-gray-50 rounded-xl p-4 mb-5">
               <div className="text-center">
                 <p className="text-xl font-bold text-[#1A56DB]">{worker.totalJobs || 0}</p>
                 <p className="text-gray-500 text-xs">{t('workerProfile.jobsDone')}</p>
@@ -170,6 +172,12 @@ const WorkerProfile = () => {
               <div className="text-center">
                 <p className="text-xl font-bold text-[#1A56DB]">{formatUZS(worker.jobRate)}</p>
                 <p className="text-gray-500 text-xs">{t('workerProfile.perJob') || 'per job'}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-[#1A56DB]">
+                  {avgResponseHours === null ? '—' : avgResponseHours < 1 ? t('workerProfile.lessThan1hr') : `${avgResponseHours}h`}
+                </p>
+                <p className="text-gray-500 text-xs">{t('workerProfile.response')}</p>
               </div>
             </div>
 

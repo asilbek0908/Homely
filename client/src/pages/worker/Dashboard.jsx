@@ -173,13 +173,13 @@ const WorkerDashboard = () => {
         </div>
       </aside>
 
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 pb-24 lg:pb-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <div className="relative group">
               <button onClick={() => avatarInputRef.current?.click()} className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-gray-200 hover:border-[#1A56DB] transition-colors">
                 {user?.avatar ? (
-                  <img src={`http://localhost:5000${user.avatar}`} alt="" className="w-full h-full object-cover" />
+                  <img src={user.avatar} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-[#1A56DB] flex items-center justify-center text-white text-xl font-bold">
                     {user?.name?.[0]?.toUpperCase()}
@@ -236,7 +236,7 @@ const WorkerDashboard = () => {
 
               {currentDoc ? (
                 <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-                  <a href={`http://localhost:5000${currentDoc}`} target="_blank" rel="noopener noreferrer"
+                  <a href={currentDoc} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 text-[#1A56DB] text-sm hover:underline">
                     <span className="text-xl">📄</span>
                     <span>{t('adminDash.viewDoc')}</span>
@@ -300,7 +300,7 @@ const WorkerDashboard = () => {
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                     {portfolioImages.map((url, i) => (
                       <div key={i} className="relative group">
-                        <img src={`http://localhost:5000${url}`} alt="" className="w-full h-20 object-cover rounded-lg" />
+                        <img src={url} alt="" className="w-full h-20 object-cover rounded-lg" />
                         <button
                           onClick={() => handlePhotoDelete(url)}
                           disabled={deletingPhoto === url}
@@ -318,12 +318,17 @@ const WorkerDashboard = () => {
           </div>
         ) : (
         <>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {[
             { label: t('workerDash.todayJobs'), value: todayBookings.length, color: 'text-[#1A56DB]', bg: 'bg-blue-50', icon: '📋' },
             { label: t('workerDash.thisMonth'), value: formatUZS(stats?.totalEarnings || 0), color: 'text-green-600', bg: 'bg-green-50', icon: '💰' },
             { label: t('workerDash.totalReviews'), value: stats?.totalReviews || 0, color: 'text-yellow-600', bg: 'bg-yellow-50', icon: '⭐' },
             { label: t('workerDash.jobsDone'), value: stats?.totalJobs || 0, color: 'text-purple-600', bg: 'bg-purple-50', icon: '✅' },
+            {
+              label: t('workerProfile.response'),
+              value: stats?.avgResponseHours == null ? '—' : stats.avgResponseHours < 1 ? t('workerProfile.lessThan1hr') : `${stats.avgResponseHours}h`,
+              color: 'text-orange-600', bg: 'bg-orange-50', icon: '⚡',
+            },
           ].map((s) => (
             <div key={s.label} className={`${s.bg} rounded-xl p-5`}>
               <div className="text-2xl mb-2">{s.icon}</div>
@@ -358,14 +363,23 @@ const WorkerDashboard = () => {
           <section>
             <h2 className="text-lg font-bold text-gray-900 mb-4">{t('workerDash.earnings7')}</h2>
             <div className="bg-white rounded-xl shadow-md p-5">
-              <div className="flex items-end gap-2 h-32">
+              <div className="flex items-end gap-2 h-44">
                 {last7.map((d) => (
                   <div key={d.label} className="flex-1 flex flex-col items-center gap-1">
+                    {d.value > 0 && (
+                      <span className="text-xs font-medium text-[#1A56DB] whitespace-nowrap" style={{ fontSize: '10px' }}>
+                        {new Intl.NumberFormat('uz-UZ', { notation: 'compact' }).format(d.value)}
+                      </span>
+                    )}
                     <div className="w-full rounded-t-lg bg-[#1A56DB] opacity-80 hover:opacity-100 transition-all"
                       style={{ height: `${(d.value / maxEarning) * 100}%`, minHeight: '4px' }} title={formatUZS(d.value)} />
                     <span className="text-xs text-gray-500">{d.label}</span>
                   </div>
                 ))}
+              </div>
+              <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-500">
+                <span>Last 7 days</span>
+                <span className="font-semibold text-gray-900">{formatUZS(last7.reduce((s, d) => s + d.value, 0))} total</span>
               </div>
             </div>
           </section>
@@ -382,6 +396,29 @@ const WorkerDashboard = () => {
         </>
         )}
       </main>
+
+      {/* Mobile bottom navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex items-center justify-around px-2 py-2 shadow-lg">
+        {[
+          { id: 'dashboard', icon: '🏠', label: t('common.dashboard') },
+          { id: 'jobs', icon: '🔧', label: t('workerDash.myJobs') },
+          { id: 'earnings', icon: '💰', label: t('workerDash.earningsTab') },
+          { id: 'documents', icon: '📄', label: 'Docs' },
+        ].map((item) => (
+          <button key={item.id} onClick={() => setActiveTab(item.id)}
+            className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors ${activeTab === item.id ? 'text-[#1A56DB]' : 'text-gray-400'}`}>
+            <span className="text-xl">{item.icon}</span>
+            <span className="text-[10px] font-medium">{item.label}</span>
+          </button>
+        ))}
+        <Link to="/worker/setup" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-gray-400">
+          <span className="text-xl">👤</span>
+          <span className="text-[10px] font-medium">{t('workerDash.editProfile')}</span>
+        </Link>
+      </nav>
+
+      {/* Bottom padding on mobile so content isn't hidden behind nav */}
+      <div className="lg:hidden h-20" />
     </div>
   );
 };

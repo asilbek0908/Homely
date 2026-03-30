@@ -126,15 +126,18 @@ const AdminDashboard = () => {
               {/* Booking Status Distribution */}
               <div className="bg-white rounded-xl shadow-md p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">{t('adminDash.statusDistribution')}</h3>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {statusData.map((s) => (
                     <div key={s._id}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">{t(`bookingCard.status.${s._id}`)}</span>
-                        <span className="font-medium text-gray-900">{s.count}</span>
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="flex items-center gap-2 text-gray-700 font-medium">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: statusColors[s._id] || '#9CA3AF' }} />
+                          {t(`bookingCard.status.${s._id}`)}
+                        </span>
+                        <span className="font-semibold text-gray-900">{s.count} <span className="text-gray-400 font-normal text-xs">({Math.round((s.count / totalBookingsForChart) * 100)}%)</span></span>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-3">
-                        <div className="h-3 rounded-full transition-all" style={{ width: `${(s.count / totalBookingsForChart) * 100}%`, backgroundColor: statusColors[s._id] || '#9CA3AF' }} />
+                      <div className="w-full bg-gray-100 rounded-full h-2.5">
+                        <div className="h-2.5 rounded-full transition-all" style={{ width: `${(s.count / totalBookingsForChart) * 100}%`, backgroundColor: statusColors[s._id] || '#9CA3AF' }} />
                       </div>
                     </div>
                   ))}
@@ -145,7 +148,7 @@ const AdminDashboard = () => {
               {/* Monthly Bookings Trend */}
               <div className="bg-white rounded-xl shadow-md p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">{t('adminDash.monthlyTrend')}</h3>
-                <div className="flex items-end gap-3 h-40">
+                <div className="flex items-end gap-3 h-44">
                   {monthlyData.map((m) => (
                     <div key={`${m._id.year}-${m._id.month}`} className="flex-1 flex flex-col items-center gap-1">
                       <span className="text-xs font-medium text-gray-700">{m.count}</span>
@@ -156,6 +159,12 @@ const AdminDashboard = () => {
                   ))}
                 </div>
                 {monthlyData.length === 0 && <p className="text-gray-400 text-sm text-center py-4">{t('adminDash.noData')}</p>}
+                {monthlyData.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-500">
+                    <span>Last 6 months</span>
+                    <span className="font-semibold text-gray-900">{monthlyData.reduce((s, m) => s + m.count, 0)} total bookings</span>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -205,7 +214,7 @@ const AdminDashboard = () => {
                       <td className="px-5 py-3 text-gray-600">{w.location?.district}</td>
                       <td className="px-5 py-3">
                         {w.idDocument ? (
-                          <a href={`http://localhost:5000${w.idDocument}`} target="_blank" rel="noopener noreferrer"
+                          <a href={w.idDocument} target="_blank" rel="noopener noreferrer"
                             className="text-xs text-[#1A56DB] hover:underline flex items-center gap-1">
                             📄 {t('adminDash.viewDoc')}
                           </a>
