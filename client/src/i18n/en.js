@@ -23,6 +23,8 @@ export default {
     selectService: 'Select a service',
     allDistricts: 'All districts',
     delete: 'Delete',
+    save: 'Save',
+    saved: 'Saved',
   },
 
   notFound: {
@@ -281,6 +283,8 @@ export default {
     district: 'District',
     email: 'Email',
     emailNote: 'Email cannot be changed.',
+    savedTab: 'Saved Workers',
+    noSaved: 'No saved workers yet.',
   },
 
   // Worker dashboard

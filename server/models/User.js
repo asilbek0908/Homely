@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema({
   resetPasswordToken: { type: String, default: '' },
   resetPasswordExpires: { type: Date },
   telegramChatId: { type: String, default: '' },
+  savedWorkers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Worker' }],
   createdAt: { type: Date, default: Date.now },
 });
 

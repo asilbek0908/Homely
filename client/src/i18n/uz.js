@@ -22,6 +22,8 @@ export default {
     selectService: 'Xizmatni tanlang',
     allDistricts: 'Barcha tumanlar',
     delete: "O'chirish",
+    save: 'Saqlash',
+    saved: 'Saqlangan',
   },
 
   notFound: {
@@ -267,6 +269,8 @@ export default {
     district: 'Tuman',
     email: 'Email',
     emailNote: 'Emailni o\'zgartirish mumkin emas.',
+    savedTab: 'Saqlangan ustalar',
+    noSaved: 'Saqlangan ustalar yo\'q.',
   },
 
   workerDash: {

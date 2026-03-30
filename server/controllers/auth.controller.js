@@ -239,4 +239,37 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, uploadUserAvatar, verifyEmail, resendVerification, forgotPassword, resetPassword, updateProfile };
+// @desc  Toggle save/unsave a worker
+// @route POST /api/auth/saved-workers/:workerId
+const toggleSavedWorker = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const workerId = req.params.workerId;
+    const idx = user.savedWorkers.findIndex((id) => id.toString() === workerId);
+    if (idx === -1) {
+      user.savedWorkers.push(workerId);
+    } else {
+      user.savedWorkers.splice(idx, 1);
+    }
+    await user.save();
+    res.json({ success: true, savedWorkers: user.savedWorkers });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// @desc  Get saved workers
+// @route GET /api/auth/saved-workers
+const getSavedWorkers = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate({
+      path: 'savedWorkers',
+      populate: { path: 'user', select: 'name avatar phone' },
+    });
+    res.json({ success: true, savedWorkers: user.savedWorkers });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = { register, login, getMe, uploadUserAvatar, verifyEmail, resendVerification, forgotPassword, resetPassword, updateProfile, toggleSavedWorker, getSavedWorkers };

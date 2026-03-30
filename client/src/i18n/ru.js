@@ -22,6 +22,8 @@ export default {
     selectService: 'Выберите услугу',
     allDistricts: 'Все районы',
     delete: 'Удалить',
+    save: 'Сохранить',
+    saved: 'Сохранено',
   },
 
   notFound: {
@@ -267,6 +269,8 @@ export default {
     district: 'Район',
     email: 'Email',
     emailNote: 'Email нельзя изменить.',
+    savedTab: 'Избранные мастера',
+    noSaved: 'Нет сохранённых мастеров.',
   },
 
   workerDash: {

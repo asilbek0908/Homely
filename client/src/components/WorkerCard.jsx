@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { toggleSavedWorker } from '../services/auth.service';
 
 const formatUZS = (amount) =>
   new Intl.NumberFormat('uz-UZ').format(amount) + ' UZS';
@@ -16,11 +18,27 @@ const StarRating = ({ rating }) => (
   </div>
 );
 
-const WorkerCard = ({ worker }) => {
+const WorkerCard = ({ worker, savedIds = [], onSaveToggle }) => {
   const { t } = useLanguage();
   const { user: authUser } = useAuth();
   const navigate = useNavigate();
   const user = worker.user || {};
+  const [isSaved, setIsSaved] = useState(savedIds.includes(worker._id));
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!authUser) { navigate('/register'); return; }
+    setSaving(true);
+    try {
+      const data = await toggleSavedWorker(worker._id);
+      const nowSaved = data.savedWorkers.includes(worker._id);
+      setIsSaved(nowSaved);
+      onSaveToggle?.();
+    } catch { /* silent */ } finally {
+      setSaving(false);
+    }
+  };
 
   const handleProtectedClick = (e, path) => {
     if (!authUser) {
@@ -83,6 +101,11 @@ const WorkerCard = ({ worker }) => {
           className="flex-1 text-center text-sm font-medium bg-[#F97316] text-white px-3 py-2 rounded-lg hover:bg-orange-600">
           {t('common.bookNow')}
         </Link>
+        <button onClick={handleSave} disabled={saving}
+          className={`px-3 py-2 rounded-lg text-lg transition-colors ${isSaved ? 'text-red-500 bg-red-50 hover:bg-red-100' : 'text-gray-400 bg-gray-50 hover:bg-gray-100'}`}
+          title={isSaved ? t('common.saved') : t('common.save')}>
+          {isSaved ? '❤️' : '🤍'}
+        </button>
       </div>
     </div>
   );

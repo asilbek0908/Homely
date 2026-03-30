@@ -4,8 +4,9 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { getCustomerBookings } from '../../services/booking.service';
 import { uploadAvatar } from '../../services/upload.service';
-import { updateProfile } from '../../services/auth.service';
+import { updateProfile, getSavedWorkers, toggleSavedWorker } from '../../services/auth.service';
 import BookingCard from '../../components/BookingCard';
+import WorkerCard from '../../components/WorkerCard';
 
 const formatUZS = (n) => new Intl.NumberFormat('uz-UZ').format(n) + ' UZS';
 
@@ -20,11 +21,16 @@ const CustomerDashboard = () => {
   const [profileForm, setProfileForm] = useState({ name: '', phone: '', district: '' });
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMsg, setProfileMsg] = useState('');
+  const [savedWorkers, setSavedWorkers] = useState([]);
 
   const fetchData = async () => {
     try {
-      const bookData = await getCustomerBookings();
+      const [bookData, savedData] = await Promise.all([
+        getCustomerBookings(),
+        getSavedWorkers().catch(() => ({ savedWorkers: [] })),
+      ]);
       setBookings(bookData.bookings || []);
+      setSavedWorkers(savedData.savedWorkers || []);
     } catch (err) {
       console.error('Dashboard fetch error:', err);
     } finally {
@@ -87,7 +93,7 @@ const CustomerDashboard = () => {
     { label: t('customerDash.activeBookings'), value: stats.active, color: 'text-[#1A56DB]', bg: 'bg-blue-50', icon: '📋' },
     { label: t('customerDash.completedJobs'), value: stats.completed, color: 'text-green-600', bg: 'bg-green-50', icon: '✅' },
     { label: t('customerDash.totalSpent'), value: formatUZS(stats.spent), color: 'text-[#F97316]', bg: 'bg-orange-50', icon: '💰' },
-    { label: t('customerDash.savedWorkers'), value: 0, color: 'text-purple-600', bg: 'bg-purple-50', icon: '❤️' },
+    { label: t('customerDash.savedWorkers'), value: savedWorkers.length, color: 'text-purple-600', bg: 'bg-purple-50', icon: '❤️' },
   ];
 
   const activeBookings = bookings.filter((b) => ['pending', 'confirmed', 'inProgress'].includes(b.status));
@@ -105,6 +111,7 @@ const CustomerDashboard = () => {
           {[
             { id: 'dashboard', label: t('common.dashboard'), icon: '🏠' },
             { id: 'bookings', label: t('customerDash.myBookings'), icon: '📋' },
+            { id: 'saved', label: t('customerDash.savedTab'), icon: '❤️' },
             { id: 'profile', label: t('customerDash.profile'), icon: '👤' },
             { id: 'workers', label: t('customerDash.findWorkers'), icon: '🔍', href: '/workers' },
           ].map((item) => (
@@ -163,7 +170,25 @@ const CustomerDashboard = () => {
           ))}
         </div>
 
-        {activeTab === 'profile' ? (
+        {activeTab === 'saved' ? (
+          <section>
+            <h2 className="text-lg font-bold text-gray-900 mb-6">{t('customerDash.savedTab')}</h2>
+            {savedWorkers.length === 0 ? (
+              <div className="bg-white rounded-xl p-8 text-center text-gray-400">
+                <div className="text-4xl mb-2">🤍</div>
+                <p>{t('customerDash.noSaved')} <Link to="/workers" className="text-[#1A56DB] hover:underline">{t('customerDash.findWorker')}</Link></p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                {savedWorkers.map((w) => (
+                  <WorkerCard key={w._id} worker={w}
+                    savedIds={savedWorkers.map((s) => s._id)}
+                    onSaveToggle={fetchData} />
+                ))}
+              </div>
+            )}
+          </section>
+        ) : activeTab === 'profile' ? (
           <section className="max-w-lg">
             <h2 className="text-lg font-bold text-gray-900 mb-6">{t('customerDash.editProfile')}</h2>
             <form onSubmit={handleProfileSave} className="bg-white rounded-xl p-6 shadow-sm space-y-5">
