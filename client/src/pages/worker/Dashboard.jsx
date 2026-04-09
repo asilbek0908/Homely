@@ -323,7 +323,7 @@ const WorkerDashboard = () => {
         <>
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {[
-            { label: t('workerDash.todayJobs'), value: todayBookings.length, color: 'text-[#1A56DB]', bg: 'bg-blue-50', icon: '📋' },
+            { label: t('workerDash.active'), value: bookings.filter((b) => ['confirmed','inProgress'].includes(b.status)).length, color: 'text-[#1A56DB]', bg: 'bg-blue-50', icon: '📋' },
             { label: t('workerDash.thisMonth'), value: formatUZS(stats?.totalEarnings || 0), color: 'text-green-600', bg: 'bg-green-50', icon: '💰' },
             { label: t('workerDash.totalReviews'), value: stats?.totalReviews || 0, color: 'text-yellow-600', bg: 'bg-yellow-50', icon: '⭐' },
             { label: t('workerDash.jobsDone'), value: stats?.totalJobs || 0, color: 'text-purple-600', bg: 'bg-purple-50', icon: '✅' },
@@ -402,6 +402,23 @@ const WorkerDashboard = () => {
             </div>
           </section>
         </div>
+
+        {/* Active (confirmed + inProgress) bookings — always visible on overview */}
+        {(() => {
+          const activeBookings = bookings.filter((b) => ['confirmed', 'inProgress'].includes(b.status));
+          if (activeBookings.length === 0) return null;
+          return (
+            <section className="mt-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                🔧 Active Jobs
+                <span className="text-xs bg-blue-100 text-[#1A56DB] px-2 py-0.5 rounded-full">{activeBookings.length}</span>
+              </h2>
+              <div className="space-y-3">
+                {activeBookings.map((b) => <BookingCard key={b._id} booking={b} role="worker" onStatusUpdate={fetchData} />)}
+              </div>
+            </section>
+          );
+        })()}
 
         {todayBookings.length > 0 && (
           <section className="mt-6">
