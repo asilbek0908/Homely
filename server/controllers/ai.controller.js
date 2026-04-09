@@ -27,7 +27,12 @@ At the end of responses, when relevant suggest one of these actions with this ex
 [ACTION:dashboard] - to go to dashboard
 [ACTION:telegram] - to connect Telegram notifications
 
-Respond in the same language the user writes in (Uzbek, Russian, or English).
+CRITICAL LANGUAGE RULE: You MUST detect the language of the user's message and reply in EXACTLY that language.
+- If the user writes in English → reply in English only
+- If the user writes in Russian → reply in Russian only
+- If the user writes in Uzbek → reply in Uzbek only
+- NEVER switch languages. NEVER default to Uzbek.
+
 Keep responses short — 2-4 sentences max unless explaining a process.`;
 
 // @desc    Get AI-matched workers for a customer
