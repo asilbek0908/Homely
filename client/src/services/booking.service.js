@@ -15,8 +15,10 @@ export const getWorkerBookings = async () => {
   return res.data;
 };
 
-export const updateBookingStatus = async (id, status) => {
-  const res = await api.put(`/bookings/${id}/status`, { status });
+export const updateBookingStatus = async (id, status, finalPrice = null) => {
+  const body = { status };
+  if (finalPrice != null) body.finalPrice = finalPrice;
+  const res = await api.put(`/bookings/${id}/status`, body);
   return res.data;
 };
 

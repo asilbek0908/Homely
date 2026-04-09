@@ -15,6 +15,9 @@ const BookingCard = ({ booking, role, onStatusUpdate }) => {
   const [newTime, setNewTime] = useState('');
   const [rescheduling, setRescheduling] = useState(false);
   const [rescheduled, setRescheduled] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [finalPrice, setFinalPrice] = useState('');
+  const [completing, setCompleting] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -73,6 +76,20 @@ const BookingCard = ({ booking, role, onStatusUpdate }) => {
     }
   };
 
+  const handleComplete = async () => {
+    setCompleting(true);
+    try {
+      const price = finalPrice !== '' ? Number(finalPrice) : booking.price;
+      await updateBookingStatus(booking._id, 'completed', price);
+      setShowCompleteModal(false);
+      onStatusUpdate?.();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error completing booking');
+    } finally {
+      setCompleting(false);
+    }
+  };
+
   const handleReviewSubmit = async () => {
     if (!rating) return;
     setReviewLoading(true);
@@ -124,7 +141,17 @@ const BookingCard = ({ booking, role, onStatusUpdate }) => {
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="font-bold text-gray-900">{formatUZS(booking.price)}</span>
+        <div>
+          {booking.finalPrice != null && booking.finalPrice !== booking.price ? (
+            <div>
+              <span className="font-bold text-gray-900">{formatUZS(booking.finalPrice)}</span>
+              <span className="text-xs text-gray-400 line-through ml-2">{formatUZS(booking.price)}</span>
+              <span className="text-xs text-orange-500 ml-1">Final</span>
+            </div>
+          ) : (
+            <span className="font-bold text-gray-900">{formatUZS(booking.price)}</span>
+          )}
+        </div>
         <div className="flex gap-2">
           {role === 'worker' && booking.status === 'pending' && (
             <>
@@ -145,8 +172,8 @@ const BookingCard = ({ booking, role, onStatusUpdate }) => {
             </button>
           )}
           {role === 'worker' && booking.status === 'inProgress' && (
-            <button onClick={() => handleStatus('completed')}
-              className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg">
+            <button onClick={() => { setFinalPrice(String(booking.price)); setShowCompleteModal(true); }}
+              className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700">
               {t('bookingCard.complete')}
             </button>
           )}
@@ -179,6 +206,39 @@ const BookingCard = ({ booking, role, onStatusUpdate }) => {
           )}
         </div>
       </div>
+
+      {showCompleteModal && (
+        <div className="mt-4 pt-4 border-t border-green-100 bg-green-50 rounded-xl p-4">
+          <p className="text-sm font-semibold text-green-800 mb-1">✅ Confirm Job Completion</p>
+          <p className="text-xs text-green-700 mb-3">Set the final price charged to the customer.</p>
+          <div className="flex items-center gap-2 mb-3">
+            <input
+              type="number"
+              value={finalPrice}
+              onChange={(e) => setFinalPrice(e.target.value)}
+              placeholder="Final price (UZS)"
+              className="flex-1 px-3 py-2 border border-green-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <span className="text-sm text-gray-500 whitespace-nowrap">UZS</span>
+          </div>
+          {finalPrice !== '' && Number(finalPrice) !== booking.price && (
+            <p className="text-xs text-orange-600 mb-3">
+              ⚠ Original estimate was {formatUZS(booking.price)}. Final price will be {formatUZS(Number(finalPrice))}.
+            </p>
+          )}
+          <div className="flex gap-2">
+            <button onClick={handleComplete} disabled={completing || finalPrice === ''}
+              className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2">
+              {completing && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+              Confirm & Complete
+            </button>
+            <button onClick={() => setShowCompleteModal(false)}
+              className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50">
+              {t('common.cancel')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {showReschedule && (
         <div className="mt-4 pt-4 border-t border-gray-100">

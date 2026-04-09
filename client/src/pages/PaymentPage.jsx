@@ -127,7 +127,10 @@ const PaymentPage = () => {
                 </div>
                 <div className="flex justify-between pt-2 border-t border-gray-100">
                   <span className="font-bold text-gray-900">{t('payment.total')}</span>
-                  <span className="font-bold text-[#1A56DB] text-lg">{formatUZS(bookingData.price)}</span>
+                  <div className="text-right">
+                    <p className="font-bold text-[#1A56DB] text-lg">from {formatUZS(bookingData.price)}</p>
+                    <p className="text-xs text-gray-400">Final price agreed on-site</p>
+                  </div>
                 </div>
               </div>
             </div>

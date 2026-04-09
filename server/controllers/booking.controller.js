@@ -94,7 +94,7 @@ const getWorkerBookings = async (req, res) => {
 // @route   PUT /api/bookings/:id/status
 const updateBookingStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, finalPrice } = req.body;
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
@@ -109,6 +109,9 @@ const updateBookingStatus = async (req, res) => {
     }
 
     booking.status = status;
+    if (status === 'completed' && finalPrice != null) {
+      booking.finalPrice = Number(finalPrice);
+    }
     await booking.save();
 
     // Update worker totalJobs when completed
