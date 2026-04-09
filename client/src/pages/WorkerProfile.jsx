@@ -4,9 +4,10 @@ import { getWorkerById } from "../services/worker.service";
 import { getWorkerReviews, createReview } from "../services/review.service";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import MapPicker from "../components/MapPicker";
 
 const formatUZS = (n) => new Intl.NumberFormat("uz-UZ").format(n) + " UZS";
-const TIMES = ["09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"];
+const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
 const StarRating = ({ rating, size = 5 }) => (
   <div className="flex items-center gap-0.5">
@@ -86,6 +87,14 @@ const WorkerProfile = () => {
     if (!booking.service || !booking.date || !booking.time || !booking.address) {
       setBookingError(t('workerProfile.fillAllFields'));
       return;
+    }
+    if (availableDays.length > 0) {
+      const dayName = DAYS[new Date(booking.date + "T00:00:00").getDay()];
+      const dayAvail = availableDays.find((d) => d.day === dayName);
+      if (!dayAvail || !dayAvail.slots.includes(booking.time)) {
+        setBookingError("Selected date/time is outside the worker's availability.");
+        return;
+      }
     }
     setBookingError("");
     navigate("/payment", {
@@ -343,27 +352,50 @@ const WorkerProfile = () => {
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">{t('workerProfile.dateLabel')}</label>
                   <input type="date" value={booking.date} min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) => setBooking({ ...booking, date: e.target.value })}
+                    onChange={(e) => setBooking({ ...booking, date: e.target.value, time: "" })}
                     className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1A56DB]" />
+                  {(() => {
+                    if (!booking.date || !availableDays.length) return null;
+                    const dayName = DAYS[new Date(booking.date + "T00:00:00").getDay()];
+                    const hasSlots = availableDays.some((d) => d.day === dayName);
+                    if (!hasSlots) return (
+                      <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                        ⚠ Worker is not available on {dayName}. Please pick another date.
+                      </p>
+                    );
+                    return null;
+                  })()}
                 </div>
 
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">{t('workerProfile.timeLabel')}</label>
-                  <div className="grid grid-cols-5 gap-1">
-                    {TIMES.map((time) => (
-                      <button key={time} onClick={() => setBooking({ ...booking, time })}
-                        className={`text-xs py-1.5 rounded-lg border ${booking.time === time ? "bg-[#1A56DB] text-white border-[#1A56DB]" : "border-gray-300 text-gray-600 hover:border-[#1A56DB]"}`}>
-                        {time}
-                      </button>
-                    ))}
-                  </div>
+                  {(() => {
+                    const dayName = booking.date ? DAYS[new Date(booking.date + "T00:00:00").getDay()] : null;
+                    const dayAvail = dayName ? availableDays.find((d) => d.day === dayName) : null;
+                    const slots = dayAvail ? dayAvail.slots : (availableDays.length === 0 ? ["09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"] : []);
+                    if (!booking.date) return <p className="text-xs text-gray-400 italic">Pick a date first to see available times.</p>;
+                    if (slots.length === 0) return <p className="text-xs text-gray-400 italic">No available slots for this day.</p>;
+                    return (
+                      <div className="grid grid-cols-5 gap-1">
+                        {slots.map((time) => (
+                          <button key={time} onClick={() => setBooking({ ...booking, time })}
+                            className={`text-xs py-1.5 rounded-lg border ${booking.time === time ? "bg-[#1A56DB] text-white border-[#1A56DB]" : "border-gray-300 text-gray-600 hover:border-[#1A56DB]"}`}>
+                            {time}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">{t('workerProfile.addressLabel')}</label>
-                  <input type="text" value={booking.address} placeholder={t('workerProfile.addressPlaceholder')}
-                    onChange={(e) => setBooking({ ...booking, address: e.target.value })}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1A56DB]" />
+                  <MapPicker onAddressSelect={(address) => setBooking({ ...booking, address })} />
+                  {booking.address && (
+                    <input type="text" value={booking.address}
+                      onChange={(e) => setBooking({ ...booking, address: e.target.value })}
+                      className="mt-2 w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1A56DB]" />
+                  )}
                 </div>
 
                 <div>
