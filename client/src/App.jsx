@@ -5,6 +5,8 @@ import { SocketProvider } from './context/SocketContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import NotificationToast from './components/NotificationToast';
+import AIChat from './components/AIChat';
 
 // Pages
 import Landing from './pages/Landing';
@@ -61,6 +63,8 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
       <SocketProvider>
+        <NotificationToast />
+        <AIChat />
         <Routes>
           {/* Public */}
           <Route path="/" element={<Layout><Landing /></Layout>} />

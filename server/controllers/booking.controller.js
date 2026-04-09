@@ -5,6 +5,9 @@ const {
   sendNewBookingNotification,
   sendBookingConfirmedNotification,
   sendBookingCancelledNotification,
+  sendBookingInProgressNotification,
+  sendBookingCompletedNotification,
+  sendBookingRescheduledNotification,
 } = require('../utils/telegramBot');
 
 // @desc    Create a booking
@@ -121,28 +124,22 @@ const updateBookingStatus = async (req, res) => {
 
     // Send Telegram notifications (non-blocking)
     try {
+      const customer = await User.findById(booking.customer).select('name phone telegramChatId');
+      const workerDoc = await Worker.findById(booking.worker).populate('user', 'name phone telegramChatId');
+      const workerUser = workerDoc?.user;
+
       if (status === 'confirmed') {
-        // Notify customer that worker confirmed
-        const customer = await User.findById(booking.customer).select('name phone telegramChatId');
-        const workerDoc = await Worker.findById(booking.worker).populate('user', 'name phone');
-        if (customer?.telegramChatId) {
-          sendBookingConfirmedNotification(booking, workerDoc?.user, customer);
-        }
+        if (customer?.telegramChatId) sendBookingConfirmedNotification(booking, workerUser, customer);
+      } else if (status === 'inProgress') {
+        if (customer?.telegramChatId) sendBookingInProgressNotification(booking, workerUser, customer);
+      } else if (status === 'completed') {
+        if (customer?.telegramChatId) sendBookingCompletedNotification(booking, workerUser, customer);
       } else if (status === 'cancelled') {
-        // Notify the other party about cancellation
         const cancelledBy = req.user.role;
         if (cancelledBy === 'customer') {
-          // Notify worker
-          const workerDoc = await Worker.findById(booking.worker).populate('user', 'name telegramChatId');
-          if (workerDoc?.user?.telegramChatId) {
-            sendBookingCancelledNotification(booking, workerDoc.user, 'customer');
-          }
+          if (workerUser?.telegramChatId) sendBookingCancelledNotification(booking, workerUser, 'customer');
         } else {
-          // Notify customer
-          const customer = await User.findById(booking.customer).select('name telegramChatId');
-          if (customer?.telegramChatId) {
-            sendBookingCancelledNotification(booking, customer, 'worker');
-          }
+          if (customer?.telegramChatId) sendBookingCancelledNotification(booking, customer, 'worker');
         }
       }
     } catch (tgErr) {
@@ -210,11 +207,16 @@ const rescheduleBooking = async (req, res) => {
     try {
       const io = req.app.get('io');
       const userSockets = req.app.get('userSockets');
-      const workerDoc = await Worker.findById(booking.worker).select('user');
-      const workerUserId = workerDoc?.user?.toString();
+      const workerDoc = await Worker.findById(booking.worker).populate('user', 'name telegramChatId');
+      const workerUserId = workerDoc?.user?._id?.toString();
       if (io && userSockets && workerUserId) {
         const socketId = userSockets.get(workerUserId);
         if (socketId) io.to(socketId).emit('notification', { type: 'booking_rescheduled', booking });
+      }
+      // Telegram: notify worker about reschedule
+      const customer = await User.findById(booking.customer).select('name');
+      if (workerDoc?.user?.telegramChatId) {
+        sendBookingRescheduledNotification(booking, workerDoc.user, customer);
       }
     } catch { /* silent */ }
 

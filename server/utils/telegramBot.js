@@ -301,6 +301,42 @@ const sendBookingCancelledNotification = async (booking, recipientUser, cancelle
   await safeSend(recipientUser.telegramChatId, msgs[lang] || msgs.en);
 };
 
+const sendBookingInProgressNotification = async (booking, workerUser, customer) => {
+  if (!customer?.telegramChatId) return;
+  const lang = userLanguages.get(Number(customer.telegramChatId)) || 'en';
+  const date = new Date(booking.scheduledDate).toLocaleDateString('en-GB');
+  const msgs = {
+    uz: `🔧 *Usta ishni boshladi!*\n\n👷 ${workerUser?.name}\n🔧 ${booking.service}\n📅 ${date} soat ${booking.scheduledTime}\n📍 ${booking.address}`,
+    ru: `🔧 *Мастер приступил к работе!*\n\n👷 ${workerUser?.name}\n🔧 ${booking.service}\n📅 ${date} в ${booking.scheduledTime}\n📍 ${booking.address}`,
+    en: `🔧 *Worker started the job!*\n\n👷 ${workerUser?.name}\n🔧 ${booking.service}\n📅 ${date} at ${booking.scheduledTime}\n📍 ${booking.address}`,
+  };
+  await safeSend(customer.telegramChatId, msgs[lang] || msgs.en);
+};
+
+const sendBookingCompletedNotification = async (booking, workerUser, customer) => {
+  if (!customer?.telegramChatId) return;
+  const lang = userLanguages.get(Number(customer.telegramChatId)) || 'en';
+  const finalAmt = (booking.finalPrice ?? booking.price ?? 0).toLocaleString();
+  const msgs = {
+    uz: `🎉 *Ish bajarildi!*\n\n👷 ${workerUser?.name}\n🔧 ${booking.service}\n💰 To'lov: ${finalAmt} UZS\n\nIltimos, izoh qoldiring! ⭐`,
+    ru: `🎉 *Работа выполнена!*\n\n👷 ${workerUser?.name}\n🔧 ${booking.service}\n💰 Итоговая сумма: ${finalAmt} UZS\n\nОставьте отзыв! ⭐`,
+    en: `🎉 *Job Completed!*\n\n👷 ${workerUser?.name}\n🔧 ${booking.service}\n💰 Final amount: ${finalAmt} UZS\n\nPlease leave a review! ⭐`,
+  };
+  await safeSend(customer.telegramChatId, msgs[lang] || msgs.en);
+};
+
+const sendBookingRescheduledNotification = async (booking, workerUser, customer) => {
+  if (!workerUser?.telegramChatId) return;
+  const lang = userLanguages.get(Number(workerUser.telegramChatId)) || 'en';
+  const date = new Date(booking.scheduledDate).toLocaleDateString('en-GB');
+  const msgs = {
+    uz: `🗓 *Buyurtma qayta rejalashtirildi!*\n\n👤 ${customer?.name}\n🔧 ${booking.service}\n📅 Yangi vaqt: ${date} soat ${booking.scheduledTime}`,
+    ru: `🗓 *Заказ перенесён!*\n\n👤 ${customer?.name}\n🔧 ${booking.service}\n📅 Новое время: ${date} в ${booking.scheduledTime}`,
+    en: `🗓 *Booking Rescheduled!*\n\n👤 ${customer?.name}\n🔧 ${booking.service}\n📅 New time: ${date} at ${booking.scheduledTime}`,
+  };
+  await safeSend(workerUser.telegramChatId, msgs[lang] || msgs.en);
+};
+
 const sendWelcomeMessage = async (chatId, name) => {
   const lang = userLanguages.get(Number(chatId)) || 'en';
   const msgs = {
@@ -315,5 +351,8 @@ module.exports = {
   sendNewBookingNotification,
   sendBookingConfirmedNotification,
   sendBookingCancelledNotification,
+  sendBookingInProgressNotification,
+  sendBookingCompletedNotification,
+  sendBookingRescheduledNotification,
   sendWelcomeMessage,
 };

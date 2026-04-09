@@ -124,28 +124,36 @@ const Navbar = () => {
                       {notifications.length === 0 ? (
                         <p className="text-center text-gray-400 text-sm py-8">No notifications</p>
                       ) : (
-                        notifications.slice(0, 20).map((n) => (
-                          <div key={n.id} className={`flex items-start gap-2 px-4 py-3 border-b border-gray-50 hover:bg-gray-50 ${n.read ? '' : 'bg-blue-50/40'}`}>
-                            <span className="text-lg mt-0.5 flex-shrink-0">
-                              {n.type === 'new_booking' ? '📋' : n.type === 'booking_rescheduled' ? '🗓' : '🔔'}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-gray-800">
-                                {n.type === 'new_booking' && `New booking: ${n.booking?.service}`}
-                                {n.type === 'booking_update' && `Booking ${n.status}: ${n.booking?.service}`}
-                                {n.type === 'booking_rescheduled' && `Booking rescheduled: ${n.booking?.service}`}
-                              </p>
-                              {n.timestamp && (
-                                <p className="text-xs text-gray-400 mt-0.5">
-                                  {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                  {' · '}
-                                  {new Date(n.timestamp).toLocaleDateString()}
-                                </p>
-                              )}
+                        notifications.slice(0, 20).map((n) => {
+                          const svc = n.booking?.service || 'service';
+                          let icon = '🔔';
+                          let msg = 'You have a new notification';
+                          if (n.type === 'new_booking') { icon = '📋'; msg = `New booking request for "${svc}"`; }
+                          else if (n.type === 'booking_rescheduled') { icon = '🗓'; msg = `Booking rescheduled: "${svc}"`; }
+                          else if (n.type === 'booking_update') {
+                            if (n.status === 'confirmed')  { icon = '✅'; msg = `Your booking for "${svc}" was confirmed!`; }
+                            else if (n.status === 'inProgress') { icon = '🔧'; msg = `Worker started the job: "${svc}"`; }
+                            else if (n.status === 'completed')  { icon = '🎉'; msg = `Job completed: "${svc}"`; }
+                            else if (n.status === 'cancelled')  { icon = '❌'; msg = `Booking cancelled: "${svc}"`; }
+                            else { msg = `Booking updated: "${svc}"`; }
+                          }
+                          return (
+                            <div key={n.id} className={`flex items-start gap-2 px-4 py-3 border-b border-gray-50 hover:bg-gray-50 ${n.read ? '' : 'bg-blue-50/40'}`}>
+                              <span className="text-lg mt-0.5 flex-shrink-0">{icon}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-gray-800 leading-snug">{msg}</p>
+                                {n.timestamp && (
+                                  <p className="text-xs text-gray-400 mt-0.5">
+                                    {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {' · '}
+                                    {new Date(n.timestamp).toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                              <button onClick={() => dismissOne(n.id)} className="text-gray-300 hover:text-gray-500 text-xs flex-shrink-0">✕</button>
                             </div>
-                            <button onClick={() => dismissOne(n.id)} className="text-gray-300 hover:text-gray-500 text-xs flex-shrink-0">✕</button>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   </div>
