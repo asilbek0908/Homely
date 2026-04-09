@@ -78,16 +78,14 @@ const chatWithAI = async (req, res) => {
 
     const lang = detectLang(message);
 
-    const langInstruction = `IMPORTANT: The user is writing in ${lang.label}. You MUST respond in ${lang.label} only. Do not use any other language.`;
-
     const messages = [
-      { role: 'system', content: SYSTEM_PROMPT + '\n\n' + langInstruction },
+      { role: 'system', content: SYSTEM_PROMPT },
       ...history.map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
-      { role: 'user', content: message },
+      { role: 'user', content: `[You MUST reply in ${lang.label} only] ${message}` },
     ];
 
     const completion = await groq.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
+      model: 'llama-3.3-70b-versatile',
       messages,
       max_tokens: 512,
       temperature: 0.7,
