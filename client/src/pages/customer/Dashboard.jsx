@@ -100,7 +100,7 @@ const CustomerDashboard = () => {
   const stats = {
     active: bookings.filter((b) => ['pending', 'confirmed', 'inProgress'].includes(b.status)).length,
     completed: bookings.filter((b) => b.status === 'completed').length,
-    spent: bookings.filter((b) => b.status === 'completed').reduce((s, b) => s + b.price, 0),
+    spent: bookings.filter((b) => b.status === 'completed').reduce((s, b) => s + (b.finalPrice ?? b.price ?? 0), 0),
   };
 
   const STAT_CARDS = [
