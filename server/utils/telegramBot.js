@@ -171,7 +171,7 @@ const helpMsg = (lang) => {
 
 // ─── Bot initialization ────────────────────────────────────────────────────────
 
-if (token) {
+if (token && process.env.NODE_ENV !== 'development') {
   try {
     bot = new TelegramBot(token, { polling: true });
 

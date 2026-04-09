@@ -1,8 +1,8 @@
 const Worker = require('../models/Worker');
 const { getTopMatches } = require('../utils/aiMatching');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const Groq = require('groq-sdk');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const SYSTEM_PROMPT = `You are Homely Assistant — a helpful AI for the Homely platform, a home services marketplace in Tashkent, Uzbekistan.
 
@@ -62,25 +62,24 @@ const chatWithAI = async (req, res) => {
     const { message, history = [] } = req.body;
     if (!message) return res.status(400).json({ success: false, message: 'Message is required' });
 
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      systemInstruction: SYSTEM_PROMPT,
+    const messages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...history.map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
+      { role: 'user', content: message },
+    ];
+
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.1-8b-instant',
+      messages,
+      max_tokens: 512,
+      temperature: 0.7,
     });
 
-    // Convert history to Gemini format
-    const geminiHistory = history.map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
-
-    const chat = model.startChat({ history: geminiHistory });
-    const result = await chat.sendMessage(message);
-    const reply = result.response.text();
-
+    const reply = completion.choices[0].message.content;
     res.json({ success: true, reply });
   } catch (err) {
-    console.error('Gemini error:', err.message);
-    res.status(500).json({ success: false, message: 'AI assistant unavailable. Please try again.' });
+    console.error('Groq error:', err.message);
+    res.status(500).json({ success: false, message: err.message || 'AI assistant unavailable.' });
   }
 };
 
