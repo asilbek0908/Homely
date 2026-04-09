@@ -131,7 +131,7 @@ const WorkerDashboard = () => {
       const bd = new Date(b.scheduledDate);
       return bd.toDateString() === d.toDateString() && b.status === 'completed';
     });
-    return { label: d.toLocaleDateString('en', { weekday: 'short' }), value: dayBookings.reduce((s, b) => s + b.price, 0) };
+    return { label: d.toLocaleDateString('en', { weekday: 'short' }), value: dayBookings.reduce((s, b) => s + (b.finalPrice ?? b.price ?? 0), 0) };
   });
   const maxEarning = Math.max(...last7.map((d) => d.value), 1);
 

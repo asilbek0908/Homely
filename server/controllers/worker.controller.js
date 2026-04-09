@@ -95,7 +95,7 @@ const getWorkerStats = async (req, res) => {
     const bookings = await Booking.find({ worker: worker._id });
     const completedBookings = bookings.filter((b) => b.status === 'completed');
     const pendingBookings = bookings.filter((b) => b.status === 'pending');
-    const totalEarnings = completedBookings.reduce((sum, b) => sum + b.price, 0);
+    const totalEarnings = completedBookings.reduce((sum, b) => sum + (b.finalPrice ?? b.price ?? 0), 0);
 
     // Avg response time: hours between booking created → confirmed/accepted
     const respondedBookings = bookings.filter((b) => ['confirmed', 'inProgress', 'completed'].includes(b.status));
