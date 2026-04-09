@@ -60,6 +60,15 @@ const getAIMatches = async (req, res) => {
   }
 };
 
+// Detect language from text
+const detectLang = (text) => {
+  const uzbekChars = /[ʻʼ]|(siz|men|uy|xizmat|kerak|yordam|qanday|usta)/i;
+  const russianChars = /[а-яёА-ЯЁ]/;
+  if (russianChars.test(text)) return { code: 'ru', label: 'Russian' };
+  if (uzbekChars.test(text)) return { code: 'uz', label: 'Uzbek' };
+  return { code: 'en', label: 'English' };
+};
+
 // @desc    Chat with AI assistant
 // @route   POST /api/ai/chat
 const chatWithAI = async (req, res) => {
@@ -67,8 +76,12 @@ const chatWithAI = async (req, res) => {
     const { message, history = [] } = req.body;
     if (!message) return res.status(400).json({ success: false, message: 'Message is required' });
 
+    const lang = detectLang(message);
+
+    const langInstruction = `IMPORTANT: The user is writing in ${lang.label}. You MUST respond in ${lang.label} only. Do not use any other language.`;
+
     const messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: SYSTEM_PROMPT + '\n\n' + langInstruction },
       ...history.map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
       { role: 'user', content: message },
     ];
