@@ -158,7 +158,7 @@ const WorkerProfile = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-4 gap-3 bg-gray-50 rounded-xl p-4 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 rounded-xl p-4 mb-5">
               <div className="text-center">
                 <p className="text-xl font-bold text-[#1A56DB]">{worker.totalJobs || 0}</p>
                 <p className="text-gray-500 text-xs">{t('workerProfile.jobsDone')}</p>
@@ -168,7 +168,7 @@ const WorkerProfile = () => {
                 <p className="text-gray-500 text-xs">{t('workerProfile.yearsExp')}</p>
               </div>
               <div className="text-center">
-                <p className="text-xl font-bold text-[#1A56DB]">{formatUZS(worker.jobRate)}</p>
+                <p className="text-sm font-bold text-[#1A56DB] leading-tight">{formatUZS(worker.jobRate)}</p>
                 <p className="text-gray-500 text-xs">{t('workerProfile.perJob') || 'per job'}</p>
               </div>
               <div className="text-center">
