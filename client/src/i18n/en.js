@@ -10,7 +10,6 @@ export default {
     back: 'Back',
     next: 'Next',
     cancel: 'Cancel',
-    save: 'Save',
     perJob: '/job',
     reviews: 'reviews',
     verified: 'Verified',

@@ -9,7 +9,6 @@ export default {
     back: 'Orqaga',
     next: 'Keyingi',
     cancel: 'Bekor qilish',
-    save: 'Saqlash',
     perJob: '/ish',
     reviews: 'sharhlar',
     verified: 'Tasdiqlangan',

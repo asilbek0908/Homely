@@ -105,7 +105,7 @@ const AIChat = () => {
             <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center text-lg">🏠</div>
             <div>
               <p className="text-white font-semibold text-sm">Homely Assistant</p>
-              <p className="text-blue-200 text-xs">Powered by Gemini AI</p>
+              <p className="text-blue-200 text-xs">Powered by LLaMA 3.3 · Groq</p>
             </div>
             <div className="ml-auto flex items-center gap-1">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />

@@ -9,7 +9,6 @@ export default {
     back: 'Назад',
     next: 'Далее',
     cancel: 'Отмена',
-    save: 'Сохранить',
     perJob: '/работа',
     reviews: 'отзывов',
     verified: 'Проверен',
