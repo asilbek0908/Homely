@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Protect routes — verify JWT token
+// checks the Authorization header and attaches the user to req
 const protect = async (req, res, next) => {
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -22,7 +22,7 @@ const protect = async (req, res, next) => {
   }
 };
 
-// Authorize by role
+// use after protect — blocks anyone whose role isn't in the allowed list
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {

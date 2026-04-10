@@ -56,7 +56,7 @@ const AIChat = () => {
     setLoading(true);
 
     try {
-      // Build history excluding the initial greeting
+      // skip the first message (our greeting) so it doesn't confuse the model
       const history = messages.slice(1).map((m) => ({ role: m.role, content: m.content }));
       const data = await sendChatMessage(msg, history);
       const { clean, actions } = parseActions(data.reply || '');

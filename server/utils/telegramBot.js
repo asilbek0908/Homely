@@ -4,10 +4,10 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 
 let bot = null;
 
-// In-memory store for user language preferences { chatId -> 'uz'|'ru'|'en' }
+// keeps track of which language each user picked so messages come out right
 const userLanguages = new Map();
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// helpers
 
 const safeSend = async (chatId, text, opts = {}) => {
   if (!bot || !chatId) return;
@@ -20,7 +20,7 @@ const safeSend = async (chatId, text, opts = {}) => {
 
 const t = (lang, uz, ru, en) => (lang === 'uz' ? uz : lang === 'ru' ? ru : en);
 
-// ─── Keyboards ────────────────────────────────────────────────────────────────
+// keyboards
 
 const langKeyboard = {
   inline_keyboard: [
@@ -32,7 +32,7 @@ const langKeyboard = {
   ],
 };
 
-// Persistent bottom keyboard (always visible)
+// stays pinned at the bottom of the chat
 const replyKeyboard = (lang) => ({
   keyboard: [
     [
@@ -48,7 +48,7 @@ const replyKeyboard = (lang) => ({
   persistent: true,
 });
 
-// Inline keyboard for cards/detail screens
+// buttons that appear inside a message bubble
 const mainKeyboard = (lang) => ({
   inline_keyboard: [
     [
@@ -68,7 +68,7 @@ const backKeyboard = (lang) => ({
   ],
 });
 
-// ─── Messages ─────────────────────────────────────────────────────────────────
+// message templates
 
 const welcomeMsg = (lang, firstName, chatId) => {
   const lines = {
@@ -169,13 +169,13 @@ const helpMsg = (lang) => {
   return lines[lang];
 };
 
-// ─── Bot initialization ────────────────────────────────────────────────────────
+// bot setup — only runs in production, skip locally to avoid 409 conflicts
 
 if (token && process.env.NODE_ENV !== 'development') {
   try {
     bot = new TelegramBot(token, { polling: true });
 
-    // Register /start so Telegram shows it as a tappable command button
+    // shows /start in the command menu inside Telegram
     bot.setMyCommands([
       { command: 'start', description: 'Open main menu' },
     ]).catch(() => {});
@@ -199,7 +199,7 @@ if (token && process.env.NODE_ENV !== 'development') {
       if (['lang_uz', 'lang_ru', 'lang_en'].includes(data)) {
         const lang = data.replace('lang_', '');
         userLanguages.set(chatId, lang);
-        // Show persistent bottom buttons first, then the welcome card
+        // bottom buttons first so they appear before the welcome message
         await safeSend(chatId, t(lang, '✅ Til tanlandi', '✅ Язык выбран', '✅ Language selected'), { reply_markup: replyKeyboard(lang) });
         await safeSend(chatId, welcomeMsg(lang, firstName, chatId), { reply_markup: mainKeyboard(lang) });
         return;
@@ -233,7 +233,7 @@ if (token && process.env.NODE_ENV !== 'development') {
       }
     });
 
-    // Handle persistent reply keyboard button presses (text messages)
+    // user tapped one of the bottom buttons — match it and respond
     bot.on('message', async (msg) => {
       if (!msg.text || msg.text.startsWith('/')) return;
       const chatId = msg.chat.id;
@@ -259,7 +259,7 @@ if (token && process.env.NODE_ENV !== 'development') {
   }
 }
 
-// ─── Notification functions (used by booking controller) ──────────────────────
+// these get called from booking.controller.js when booking status changes
 
 const sendNewBookingNotification = async (booking, workerUser, customer) => {
   if (!workerUser?.telegramChatId) return;

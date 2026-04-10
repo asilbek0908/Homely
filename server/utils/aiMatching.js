@@ -1,31 +1,28 @@
-/**
- * Homely AI Matching Algorithm
- * Scores workers 0-100 based on service, rating, location, experience
- */
+// worker scoring — each factor adds points, max total is 100
 
 const getMatchScore = (worker, request) => {
   let score = 0;
 
-  // Service match — 40 points
+  // matching service is the most important factor
   if (worker.services?.includes(request.serviceType)) {
     score += 40;
   }
 
-  // Rating — 30 points max
+  // rating matters a lot, but new workers get a fair shot
   if (worker.totalReviews === 0) {
     score += 15; // new worker bonus
   } else {
     score += Math.round((worker.rating / 5) * 30);
   }
 
-  // Location — 20 points
+  // same district = full points, same city = half
   if (request.district && worker.location?.district === request.district) {
     score += 20;
   } else if (worker.location?.city === 'Tashkent') {
     score += 10;
   }
 
-  // Experience — 10 points max
+  // small bonus for experience, not a dealbreaker
   const exp = worker.experience || 0;
   if (exp >= 5) score += 10;
   else if (exp >= 3) score += 7;
@@ -65,7 +62,7 @@ const getMatchReasons = (worker, request, score) => {
     reasons.push('New worker — fresh start, competitive rates');
   }
 
-  // Always return at least 2 reasons
+  // make sure there's always something to show the user
   if (reasons.length < 2) {
     reasons.push('Available in Tashkent');
     if (reasons.length < 2) reasons.push('Registered on Homely platform');

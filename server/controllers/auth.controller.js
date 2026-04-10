@@ -4,13 +4,12 @@ const User = require('../models/User');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../utils/email');
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5000';
 
-// Generate JWT token
+// signs a token that expires in 7 days
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
-// @desc    Register user
-// @route   POST /api/auth/register
+// POST /api/auth/register
 const register = async (req, res) => {
   try {
     const { name, email, phone, password, role, location } = req.body;
@@ -24,7 +23,7 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email already registered' });
     }
 
-    // Generate email verification token
+    // random token, valid for 24h
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const user = await User.create({
       name, email, phone, password, role: role || 'customer', location,
@@ -32,7 +31,7 @@ const register = async (req, res) => {
       emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
-    // Send verification email (non-blocking)
+    // email goes out in the background, don't hold up the response
     sendVerificationEmail(email, verificationToken).catch((err) =>
       console.error('Verification email failed:', err.message)
     );
@@ -59,8 +58,7 @@ const register = async (req, res) => {
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
+// POST /api/auth/login
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -101,8 +99,7 @@ const login = async (req, res) => {
   }
 };
 
-// @desc    Get current user
-// @route   GET /api/auth/me
+// GET /api/auth/me — returns the logged-in user's data
 const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
@@ -112,8 +109,7 @@ const getMe = async (req, res) => {
   }
 };
 
-// @desc    Upload avatar
-// @route   PUT /api/auth/avatar
+// PUT /api/auth/avatar
 const uploadUserAvatar = async (req, res) => {
   try {
     if (!req.file) {
@@ -127,8 +123,7 @@ const uploadUserAvatar = async (req, res) => {
   }
 };
 
-// @desc    Verify email
-// @route   GET /api/auth/verify-email?token=xxx
+// GET /api/auth/verify-email?token=xxx
 const verifyEmail = async (req, res) => {
   try {
     const { token } = req.query;
@@ -152,8 +147,7 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-// @desc    Resend verification email
-// @route   POST /api/auth/resend-verification
+// POST /api/auth/resend-verification
 const resendVerification = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -174,8 +168,7 @@ const resendVerification = async (req, res) => {
   }
 };
 
-// @desc    Forgot password - send reset email
-// @route   POST /api/auth/forgot-password
+// POST /api/auth/forgot-password
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -187,7 +180,7 @@ const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await user.save();
 
-    // Non-blocking — won't crash if SMTP is not configured
+    // if SMTP isn't set up, the reset still "succeeds" — just no email goes out
     sendPasswordResetEmail(email, resetToken).catch((err) =>
       console.error('Password reset email failed:', err.message)
     );
@@ -197,8 +190,7 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-// @desc    Reset password with token
-// @route   POST /api/auth/reset-password
+// POST /api/auth/reset-password
 const resetPassword = async (req, res) => {
   try {
     const { token, password } = req.body;
@@ -222,8 +214,7 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// @desc    Update current user profile (name, phone, location)
-// @route   PUT /api/auth/profile
+// PUT /api/auth/profile — update name, phone, location
 const updateProfile = async (req, res) => {
   try {
     const { name, phone, location } = req.body;
@@ -239,8 +230,7 @@ const updateProfile = async (req, res) => {
   }
 };
 
-// @desc  Toggle save/unsave a worker
-// @route POST /api/auth/saved-workers/:workerId
+// POST /api/auth/saved-workers/:workerId — toggle save/unsave
 const toggleSavedWorker = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -258,8 +248,7 @@ const toggleSavedWorker = async (req, res) => {
   }
 };
 
-// @desc  Get saved workers
-// @route GET /api/auth/saved-workers
+// GET /api/auth/saved-workers
 const getSavedWorkers = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate({

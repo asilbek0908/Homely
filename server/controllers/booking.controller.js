@@ -10,8 +10,7 @@ const {
   sendBookingRescheduledNotification,
 } = require('../utils/telegramBot');
 
-// @desc    Create a booking
-// @route   POST /api/bookings
+// POST /api/bookings — customer creates a new booking
 const createBooking = async (req, res) => {
   try {
     const { worker, service, description, scheduledDate, scheduledTime, address, district, price, paymentMethod } = req.body;
@@ -32,7 +31,7 @@ const createBooking = async (req, res) => {
       commission,
     });
 
-    // Send Telegram notification to worker (non-blocking)
+    // ping the worker on Telegram — fire and forget, don't block the response
     let workerUserId;
     try {
       const workerDoc = await Worker.findById(worker).populate('user', 'name phone telegramChatId');
@@ -44,7 +43,7 @@ const createBooking = async (req, res) => {
       console.error('Telegram notify error:', tgErr.message);
     }
 
-    // Real-time notification via Socket.IO
+    // push a live notification to the worker if they're online
     const io = req.app.get('io');
     const userSockets = req.app.get('userSockets');
     if (io && userSockets && workerUserId) {
@@ -60,8 +59,7 @@ const createBooking = async (req, res) => {
   }
 };
 
-// @desc    Get customer bookings
-// @route   GET /api/bookings/customer
+// GET /api/bookings/customer — fetch all bookings for the logged-in customer
 const getCustomerBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ customer: req.user._id })
@@ -74,8 +72,7 @@ const getCustomerBookings = async (req, res) => {
   }
 };
 
-// @desc    Get worker bookings
-// @route   GET /api/bookings/worker
+// GET /api/bookings/worker — fetch all bookings assigned to the logged-in worker
 const getWorkerBookings = async (req, res) => {
   try {
     const worker = await Worker.findOne({ user: req.user._id });
@@ -93,8 +90,7 @@ const getWorkerBookings = async (req, res) => {
   }
 };
 
-// @desc    Update booking status
-// @route   PUT /api/bookings/:id/status
+// PUT /api/bookings/:id/status — worker moves the job forward, customer can only cancel
 const updateBookingStatus = async (req, res) => {
   try {
     const { status, finalPrice } = req.body;
@@ -104,7 +100,7 @@ const updateBookingStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
-    // Customer can only cancel pending or confirmed bookings
+    // customers can't move jobs to inProgress/completed, only cancel early
     if (req.user.role === 'customer') {
       if (status !== 'cancelled' || !['pending', 'confirmed'].includes(booking.status)) {
         return res.status(403).json({ success: false, message: 'Not authorized to update this booking' });
@@ -117,12 +113,12 @@ const updateBookingStatus = async (req, res) => {
     }
     await booking.save();
 
-    // Update worker totalJobs when completed
+    // bump the worker's job count so their profile stats stay accurate
     if (status === 'completed') {
       await Worker.findByIdAndUpdate(booking.worker, { $inc: { totalJobs: 1 } });
     }
 
-    // Send Telegram notifications (non-blocking)
+    // send the right Telegram message depending on what just happened
     try {
       const customer = await User.findById(booking.customer).select('name phone telegramChatId');
       const workerDoc = await Worker.findById(booking.worker).populate('user', 'name phone telegramChatId');
@@ -146,7 +142,7 @@ const updateBookingStatus = async (req, res) => {
       console.error('Telegram notify error:', tgErr.message);
     }
 
-    // Real-time notification via Socket.IO
+    // notify the other party live if they're on the site right now
     const io = req.app.get('io');
     const userSockets = req.app.get('userSockets');
     if (io && userSockets) {
@@ -168,8 +164,7 @@ const updateBookingStatus = async (req, res) => {
   }
 };
 
-// @desc    Get booking by ID
-// @route   GET /api/bookings/:id
+// GET /api/bookings/:id — single booking with full customer and worker details
 const getBookingById = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
@@ -186,8 +181,7 @@ const getBookingById = async (req, res) => {
   }
 };
 
-// @desc    Reschedule a booking (customer only, pending/confirmed)
-// @route   PUT /api/bookings/:id/reschedule
+// PUT /api/bookings/:id/reschedule — customer picks a new date/time before work starts
 const rescheduleBooking = async (req, res) => {
   try {
     const { scheduledDate, scheduledTime } = req.body;
@@ -213,7 +207,7 @@ const rescheduleBooking = async (req, res) => {
         const socketId = userSockets.get(workerUserId);
         if (socketId) io.to(socketId).emit('notification', { type: 'booking_rescheduled', booking });
       }
-      // Telegram: notify worker about reschedule
+      // also send them a Telegram message in case they're not on the site
       const customer = await User.findById(booking.customer).select('name');
       if (workerDoc?.user?.telegramChatId) {
         sendBookingRescheduledNotification(booking, workerDoc.user, customer);

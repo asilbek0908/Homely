@@ -2,8 +2,7 @@ const Worker = require('../models/Worker');
 const Booking = require('../models/Booking');
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5000';
 
-// @desc    Get all verified workers with optional filters
-// @route   GET /api/workers
+// GET /api/workers — supports filtering by service, district, rating, price
 const getAllWorkers = async (req, res) => {
   try {
     const { service, district, minRating, maxPrice } = req.query;
@@ -24,8 +23,7 @@ const getAllWorkers = async (req, res) => {
   }
 };
 
-// @desc    Get single worker by ID
-// @route   GET /api/workers/:id
+// GET /api/workers/:id — also computes avg response time on the fly
 const getWorkerById = async (req, res) => {
   try {
     const worker = await Worker.findById(req.params.id).populate('user', 'name email phone avatar location');
@@ -33,7 +31,7 @@ const getWorkerById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Worker not found' });
     }
 
-    // Calculate avg response time
+    // time from booking creation to first status change (confirmed/inProgress/completed)
     const bookings = await Booking.find({ worker: worker._id });
     const respondedBookings = bookings.filter((b) => ['confirmed', 'inProgress', 'completed'].includes(b.status));
     let avgResponseHours = null;
@@ -48,8 +46,7 @@ const getWorkerById = async (req, res) => {
   }
 };
 
-// @desc    Create worker profile
-// @route   POST /api/workers
+// POST /api/workers — upserts so hitting this twice doesn't create duplicates
 const createWorkerProfile = async (req, res) => {
   try {
     const worker = await Worker.findOneAndUpdate(
@@ -63,8 +60,7 @@ const createWorkerProfile = async (req, res) => {
   }
 };
 
-// @desc    Update worker profile
-// @route   PUT /api/workers/profile
+// PUT /api/workers/profile
 const updateWorkerProfile = async (req, res) => {
   try {
     const { bio, services, jobRate, experience, location, availability } = req.body;
@@ -83,8 +79,7 @@ const updateWorkerProfile = async (req, res) => {
   }
 };
 
-// @desc    Get worker stats
-// @route   GET /api/workers/stats/me
+// GET /api/workers/stats/me — powers the dashboard stat cards
 const getWorkerStats = async (req, res) => {
   try {
     const worker = await Worker.findOne({ user: req.user._id });
@@ -97,7 +92,7 @@ const getWorkerStats = async (req, res) => {
     const pendingBookings = bookings.filter((b) => b.status === 'pending');
     const totalEarnings = completedBookings.reduce((sum, b) => sum + (b.finalPrice ?? b.price ?? 0), 0);
 
-    // Avg response time: hours between booking created → confirmed/accepted
+    // how quickly the worker responds — shown on their public profile
     const respondedBookings = bookings.filter((b) => ['confirmed', 'inProgress', 'completed'].includes(b.status));
     let avgResponseHours = null;
     if (respondedBookings.length > 0) {
@@ -122,8 +117,7 @@ const getWorkerStats = async (req, res) => {
   }
 };
 
-// @desc    Upload ID document
-// @route   PUT /api/workers/document
+// PUT /api/workers/document
 const uploadIdDocument = async (req, res) => {
   try {
     if (!req.file) {
@@ -144,8 +138,7 @@ const uploadIdDocument = async (req, res) => {
   }
 };
 
-// @desc    Upload portfolio images
-// @route   PUT /api/workers/portfolio
+// PUT /api/workers/portfolio
 const uploadPortfolio = async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -166,8 +159,7 @@ const uploadPortfolio = async (req, res) => {
   }
 };
 
-// @desc    Get current worker's own profile
-// @route   GET /api/workers/profile/me
+// GET /api/workers/profile/me
 const getMyProfile = async (req, res) => {
   try {
     const worker = await Worker.findOne({ user: req.user._id });
@@ -178,8 +170,7 @@ const getMyProfile = async (req, res) => {
   }
 };
 
-// @desc    Delete ID document
-// @route   DELETE /api/workers/document
+// DELETE /api/workers/document
 const deleteIdDocument = async (req, res) => {
   try {
     const worker = await Worker.findOneAndUpdate(
@@ -194,8 +185,7 @@ const deleteIdDocument = async (req, res) => {
   }
 };
 
-// @desc    Delete one portfolio photo
-// @route   DELETE /api/workers/portfolio
+// DELETE /api/workers/portfolio
 const deletePortfolioPhoto = async (req, res) => {
   try {
     const { url } = req.body;

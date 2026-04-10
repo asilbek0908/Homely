@@ -1,8 +1,7 @@
 const User = require('../models/User');
 const { sendWelcomeMessage } = require('../utils/telegramBot');
 
-// @desc    Connect Telegram account
-// @route   POST /api/telegram/connect
+// POST /api/telegram/connect — saves the user's chat ID so we can DM them
 const connectTelegram = async (req, res) => {
   try {
     const { telegramChatId } = req.body;
@@ -13,7 +12,7 @@ const connectTelegram = async (req, res) => {
 
     await User.findByIdAndUpdate(req.user._id, { telegramChatId: String(telegramChatId) });
 
-    // Send welcome message (non-blocking — if it fails, connection still succeeds)
+    // welcome message is best-effort — don't fail the whole request if Telegram is down
     sendWelcomeMessage(telegramChatId, req.user.name).catch((err) =>
       console.error('Welcome message error:', err.message)
     );
@@ -24,8 +23,7 @@ const connectTelegram = async (req, res) => {
   }
 };
 
-// @desc    Disconnect Telegram account
-// @route   POST /api/telegram/disconnect
+// POST /api/telegram/disconnect — clears the chat ID
 const disconnectTelegram = async (req, res) => {
   try {
     await User.findByIdAndUpdate(req.user._id, { telegramChatId: '' });

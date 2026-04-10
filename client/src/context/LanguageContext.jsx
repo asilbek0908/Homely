@@ -23,7 +23,7 @@ export const LanguageProvider = ({ children }) => {
       val = val?.[k];
     }
     if (val === undefined) {
-      // fallback to english
+      // key not found in current language, try English before giving up
       val = translations.en;
       for (const k of keys) {
         val = val?.[k];

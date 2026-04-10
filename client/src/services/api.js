@@ -5,14 +5,14 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach token to every request
+// pull the token from localStorage and stick it on every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Handle 401 globally — but NOT on login/register so those pages can show errors
+// 401 means the token expired — kick them to login, but not during login/register itself
 api.interceptors.response.use(
   (response) => response,
   (error) => {

@@ -37,9 +37,9 @@ const Toast = ({ notif, onDismiss }) => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Animate in
+    // tiny delay so the CSS transition actually plays
     const t1 = setTimeout(() => setVisible(true), 10);
-    // Auto-dismiss after 4.5s
+    // gone after 4.5s unless the user dismisses it first
     const t2 = setTimeout(() => {
       setVisible(false);
       setTimeout(onDismiss, 300);

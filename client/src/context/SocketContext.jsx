@@ -8,6 +8,7 @@ const SOCKET_URL = import.meta.env.VITE_API_URL
 
 const STORAGE_KEY = 'homely_notifications';
 
+// restore notifications from last session so the bell isn't empty on refresh
 const loadStored = () => {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
   catch { return []; }

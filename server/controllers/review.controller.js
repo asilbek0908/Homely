@@ -2,8 +2,7 @@ const Review = require('../models/Review');
 const Booking = require('../models/Booking');
 const Worker = require('../models/Worker');
 
-// @desc    Create a review
-// @route   POST /api/reviews
+// POST /api/reviews — only allowed after a booking is completed
 const createReview = async (req, res) => {
   try {
     const { bookingId, rating, comment } = req.body;
@@ -29,7 +28,7 @@ const createReview = async (req, res) => {
       comment,
     });
 
-    // Update worker rating average
+    // recalculate the worker's rating from scratch so it stays accurate
     const allReviews = await Review.find({ worker: booking.worker });
     const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
     await Worker.findByIdAndUpdate(booking.worker, {
@@ -43,8 +42,7 @@ const createReview = async (req, res) => {
   }
 };
 
-// @desc    Get reviews for a worker
-// @route   GET /api/reviews/worker/:workerId
+// GET /api/reviews/worker/:workerId
 const getWorkerReviews = async (req, res) => {
   try {
     const reviews = await Review.find({ worker: req.params.workerId })
