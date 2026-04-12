@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -13,6 +13,12 @@ L.Icon.Default.mergeOptions({
 
 const ClickHandler = ({ onPick }) => {
   useMapEvents({ click: (e) => onPick(e.latlng) });
+  return null;
+};
+
+const FlyTo = ({ position }) => {
+  const map = useMap();
+  map.flyTo([position.lat, position.lng], map.getZoom());
   return null;
 };
 
@@ -77,6 +83,7 @@ const MapPicker = ({ onAddressSelect }) => {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
           <ClickHandler onPick={handlePick} />
+          {position && <FlyTo position={position} />}
           {position && <Marker position={position} />}
         </MapContainer>
       </div>
