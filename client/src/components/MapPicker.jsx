@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -18,7 +18,9 @@ const ClickHandler = ({ onPick }) => {
 
 const FlyTo = ({ position }) => {
   const map = useMap();
-  map.flyTo([position.lat, position.lng], map.getZoom());
+  useEffect(() => {
+    map.flyTo([position.lat, position.lng], 15);
+  }, [map, position.lat, position.lng]);
   return null;
 };
 
@@ -50,12 +52,28 @@ const MapPicker = ({ onAddressSelect }) => {
   };
 
   const handleGeolocate = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setResolved('Geolocation is not supported by your browser.');
+      return;
+    }
     setResolving(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => handlePick({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setResolving(false),
-      { maximumAge: 0, timeout: 10000, enableHighAccuracy: true }
+    setResolved('');
+    // watchPosition is more reliable than getCurrentPosition for getting a fresh GPS fix
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        navigator.geolocation.clearWatch(watchId);
+        handlePick({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      (err) => {
+        navigator.geolocation.clearWatch(watchId);
+        setResolving(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          setResolved('Location access denied. Please allow location in your browser settings.');
+        } else {
+          setResolved('Could not get your location. Try again.');
+        }
+      },
+      { maximumAge: 0, timeout: 15000, enableHighAccuracy: true }
     );
   };
 
@@ -96,8 +114,9 @@ const MapPicker = ({ onAddressSelect }) => {
         </p>
       )}
       {resolved && !resolving && (
-        <p className="text-xs text-green-600 flex items-start gap-1">
-          ✅ <span className="line-clamp-2">{resolved}</span>
+        <p className={`text-xs flex items-start gap-1 ${resolved.includes('denied') || resolved.includes('Could not') || resolved.includes('not supported') ? 'text-red-500' : 'text-green-600'}`}>
+          {resolved.includes('denied') || resolved.includes('Could not') || resolved.includes('not supported') ? '⚠️' : '✅'}
+          <span className="line-clamp-2">{resolved}</span>
         </p>
       )}
     </div>
