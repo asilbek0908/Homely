@@ -54,7 +54,8 @@ const MapPicker = ({ onAddressSelect }) => {
     setResolving(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => handlePick({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setResolving(false)
+      () => setResolving(false),
+      { maximumAge: 0, timeout: 10000, enableHighAccuracy: true }
     );
   };
 
