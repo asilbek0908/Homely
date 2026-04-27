@@ -3,11 +3,11 @@
  * Models are mocked — no real DB connection needed.
  */
 
-jest.mock('../models/Worker');
-jest.mock('../models/User');
-jest.mock('../models/Booking');
+jest.mock("../models/Worker");
+jest.mock("../models/User");
+jest.mock("../models/Booking");
 
-const Worker = require('../models/Worker');
+const Worker = require("../models/Worker");
 
 const mockRes = () => {
   const res = {};
@@ -16,14 +16,17 @@ const mockRes = () => {
   return res;
 };
 
-const { getAllWorkers, getWorkerById } = require('../controllers/worker.controller');
+const {
+  getAllWorkers,
+  getWorkerById,
+} = require("../controllers/worker.controller");
 
-// ─── getAllWorkers ─────────────────────────────────────────────────────────────
+//  getAllWorkers
 
-describe('getAllWorkers', () => {
+describe("getAllWorkers", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('returns empty array when no workers found', async () => {
+  it("returns empty array when no workers found", async () => {
     Worker.find.mockReturnValue({
       populate: jest.fn().mockReturnThis(),
       sort: jest.fn().mockResolvedValue([]),
@@ -33,10 +36,12 @@ describe('getAllWorkers', () => {
     const res = mockRes();
     await getAllWorkers(req, res);
 
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, workers: [] }));
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ success: true, workers: [] }),
+    );
   });
 
-  it('always filters isVerified: true', async () => {
+  it("always filters isVerified: true", async () => {
     Worker.find.mockReturnValue({
       populate: jest.fn().mockReturnThis(),
       sort: jest.fn().mockResolvedValue([]),
@@ -44,39 +49,45 @@ describe('getAllWorkers', () => {
 
     await getAllWorkers({ query: {} }, mockRes());
 
-    expect(Worker.find).toHaveBeenCalledWith(expect.objectContaining({ isVerified: true }));
+    expect(Worker.find).toHaveBeenCalledWith(
+      expect.objectContaining({ isVerified: true }),
+    );
   });
 
-  it('filters by service when provided', async () => {
+  it("filters by service when provided", async () => {
     Worker.find.mockReturnValue({
       populate: jest.fn().mockReturnThis(),
       sort: jest.fn().mockResolvedValue([]),
     });
 
-    await getAllWorkers({ query: { service: 'Plumbing' } }, mockRes());
+    await getAllWorkers({ query: { service: "Plumbing" } }, mockRes());
 
-    expect(Worker.find).toHaveBeenCalledWith(expect.objectContaining({
-      services: { $in: ['Plumbing'] },
-    }));
+    expect(Worker.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        services: { $in: ["Plumbing"] },
+      }),
+    );
   });
 
-  it('filters by district when provided', async () => {
+  it("filters by district when provided", async () => {
     Worker.find.mockReturnValue({
       populate: jest.fn().mockReturnThis(),
       sort: jest.fn().mockResolvedValue([]),
     });
 
-    await getAllWorkers({ query: { district: 'Chilonzor' } }, mockRes());
+    await getAllWorkers({ query: { district: "Chilonzor" } }, mockRes());
 
-    expect(Worker.find).toHaveBeenCalledWith(expect.objectContaining({
-      'location.district': 'Chilonzor',
-    }));
+    expect(Worker.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        "location.district": "Chilonzor",
+      }),
+    );
   });
 
-  it('returns workers list', async () => {
+  it("returns workers list", async () => {
     const workers = [
-      { _id: '1', services: ['Plumbing'], rating: 4.5 },
-      { _id: '2', services: ['Electrical'], rating: 4.0 },
+      { _id: "1", services: ["Plumbing"], rating: 4.5 },
+      { _id: "2", services: ["Electrical"], rating: 4.0 },
     ];
     Worker.find.mockReturnValue({
       populate: jest.fn().mockReturnThis(),
@@ -86,37 +97,46 @@ describe('getAllWorkers', () => {
     const res = mockRes();
     await getAllWorkers({ query: {} }, res);
 
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, count: 2, workers }));
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ success: true, count: 2, workers }),
+    );
   });
 });
 
-// ─── getWorkerById ────────────────────────────────────────────────────────────
+// getWorkerById
 
-describe('getWorkerById', () => {
+describe("getWorkerById", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('returns 404 when worker not found', async () => {
+  it("returns 404 when worker not found", async () => {
     Worker.findById.mockReturnValue({
       populate: jest.fn().mockResolvedValue(null),
     });
 
-    const req = { params: { id: 'nonexistent' } };
+    const req = { params: { id: "nonexistent" } };
     const res = mockRes();
     await getWorkerById(req, res);
 
     expect(res.status).toHaveBeenCalledWith(404);
   });
 
-  it('returns worker when found', async () => {
-    const worker = { _id: '1', services: ['Plumbing'], rating: 4.5, user: { name: 'Ali' } };
+  it("returns worker when found", async () => {
+    const worker = {
+      _id: "1",
+      services: ["Plumbing"],
+      rating: 4.5,
+      user: { name: "Ali" },
+    };
     Worker.findById.mockReturnValue({
       populate: jest.fn().mockResolvedValue(worker),
     });
 
-    const req = { params: { id: '1' } };
+    const req = { params: { id: "1" } };
     const res = mockRes();
     await getWorkerById(req, res);
 
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, worker }));
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ success: true, worker }),
+    );
   });
 });

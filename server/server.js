@@ -7,7 +7,7 @@ const fs = require('fs');
 const { Server } = require('socket.io');
 require('dotenv').config();
 
-// Ensure upload directories exist
+// Ensuring upload directories exist
 ['uploads/avatars', 'uploads/documents'].forEach((dir) => {
   const full = path.join(__dirname, dir);
   if (!fs.existsSync(full)) fs.mkdirSync(full, { recursive: true });
@@ -53,12 +53,12 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/telegram', telegramRoutes);
 app.use('/api/ai', aiRoutes);
 
-// Test route
+// Testing route
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Homely API is running' });
 });
 
-// Global error handler
+// Global error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.statusCode || 500).json({
@@ -67,7 +67,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Create HTTP server and attach Socket.IO
+// Creating HTTP server and attach Socket.IO
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: allowedOrigins, credentials: true },
@@ -89,11 +89,11 @@ io.on('connection', (socket) => {
   });
 });
 
-// Make io accessible to routes via app
+// Making io accessible to routes via app
 app.set('io', io);
 app.set('userSockets', userSockets);
 
-// Connect to MongoDB and start server
+// Connecting to MongoDB and start server
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {

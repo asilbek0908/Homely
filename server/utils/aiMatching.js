@@ -22,7 +22,7 @@ const getMatchScore = (worker, request) => {
     score += 10;
   }
 
-  // small bonus for experience, not a dealbreaker
+  // small bonus for experience
   const exp = worker.experience || 0;
   if (exp >= 5) score += 10;
   else if (exp >= 3) score += 7;
@@ -62,7 +62,7 @@ const getMatchReasons = (worker, request, score) => {
     reasons.push('New worker — fresh start, competitive rates');
   }
 
-  // make sure there's always something to show the user
+  // making sure there's always something to show the user
   if (reasons.length < 2) {
     reasons.push('Available in Tashkent');
     if (reasons.length < 2) reasons.push('Registered on Homely platform');
